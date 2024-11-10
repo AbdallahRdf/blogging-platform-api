@@ -1,10 +1,10 @@
 import mongoose, { Schema, SchemaTypes } from "mongoose";
-import { postBodyBlocks } from "../../utils/enums.js";
+import { POST_BODY_BLOCKS } from "../../utils/enums.js";
 
 const contentBlockSchema = new Schema({
     type: {
         type: SchemaTypes.String,
-        enum: [...Object.values(postBodyBlocks)],
+        enum: [...Object.values(POST_BODY_BLOCKS)],
         required: true
     },
     value: {
@@ -13,7 +13,7 @@ const contentBlockSchema = new Schema({
     },
     language: {
         type: SchemaTypes.String,
-        required: function () { return this.type === postBodyBlocks.CODE_SNIPPET; }
+        required: function () { return this.type === POST_BODY_BLOCKS.CODE_SNIPPET; }
     }
 },
     {
@@ -43,7 +43,8 @@ const HeaderSchema = new Schema({
 const postSchema = new Schema({
     title: {
         type: SchemaTypes.String,
-        required: true
+        required: true,
+        unique: true
     },
     description: {
         type: SchemaTypes.String,

@@ -1,6 +1,6 @@
 import { body, param } from "express-validator";
 import User from "../mongoose/schemas/user.js";
-import { Roles } from "../utils/enums.js";
+import { ROLES } from "../utils/enums.js";
 
 export const userUpdateSchema = [
     body('fullName')
@@ -56,6 +56,6 @@ export const changeUserRoleSchema = [
         .withMessage('Invalid user id'),
     body('role')
         .trim()
-        .custom((value) => [Roles.ADMIN, Roles.MODERATOR, Roles.USER].includes(value))
+        .custom((value) => [ROLES.ADMIN, ROLES.MODERATOR, ROLES.USER].includes(value))
         .withMessage("Invalid role, it should be 'user', 'moderator', or 'admin'")
 ];

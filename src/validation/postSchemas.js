@@ -1,16 +1,17 @@
 import { body, param, query } from 'express-validator';
-import { postBodyBlocks, Sort } from '../utils/enums.js';
+import { POST_BODY_BLOCKS, SORT } from '../utils/enums.js';
 import mongoose from 'mongoose';
+import Post from '../mongoose/schemas/post.js';
 
 const validateContentBlock = (block) => {
     // Perform validation for a single content block
-    if (![...Object.values(postBodyBlocks)].includes(block.type)) {
+    if (![...Object.values(POST_BODY_BLOCKS)].includes(block.type)) {
         return false;
     }
     if (!block.value || typeof block.value !== 'string') {
         return false;
     }
-    if (block.type === postBodyBlocks.CODE_SNIPPET && !block.language) {
+    if (block.type === POST_BODY_BLOCKS.CODE_SNIPPET && !block.language) {
         return false;
     }
     return true;
@@ -22,7 +23,12 @@ export const postCreationSchema = [
         .notEmpty()
         .withMessage('Post title is required')
         .isString()
-        .withMessage('Post title must be a string'),
+        .withMessage('Post title must be a string')
+        .custom(async (title) => {
+            const post = await Post.findOne({ title });
+            return !Boolean(post);
+        })
+        .withMessage('Post title must be unique'),
     body('description')
         .trim()
         .notEmpty()
@@ -153,7 +159,7 @@ export const getPostSchema = [
 
     query('sort')
         .optional()
-        .isIn([Sort.NEWEST, Sort.OLDEST, Sort.TOP])
+        .isIn([SORT.LATEST, SORT.OLDEST, SORT.TOP])
         .withMessage('Invalid sort query param value'),
 
     query('search')

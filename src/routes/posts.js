@@ -6,7 +6,7 @@ import { getPostSchema, postCreationSchema, postUpdateScema } from "../validatio
 import { commentCreationSchema, commentUpdateSchema, replyUpdateSchema } from "../validation/commentSchema.js";
 import { createCommentReply, deleteCommentReply, getCommentReplies, likeOrDislikeReply, updateCommentReply } from "../controllers/repliesController.js";
 import authorizeRoles from "../middleware/authorizeRoles.js";
-import { Roles } from "../utils/enums.js";
+import { ROLES } from "../utils/enums.js";
 import checkPostExists from "../middleware/checkPostExists.js";
 import checkCommentExists from "../middleware/checkCommentExists.js";
 
@@ -18,13 +18,13 @@ router.get('/', getPostSchema, getPosts);
 
 router.get('/:postId', getPost);
 
-router.post('/', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postCreationSchema, createPost);
+router.post('/', authenticateToken, authorizeRoles(ROLES.ADMIN, ROLES.MODERATOR), postCreationSchema, createPost);
 
 router.post('/:postId/like', authenticateToken, likeOrDislikePost);
 
-router.patch('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postUpdateScema, updatePost);
+router.patch('/:postId', authenticateToken, authorizeRoles(ROLES.ADMIN, ROLES.MODERATOR), postUpdateScema, updatePost);
 
-router.delete('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), deletePost);
+router.delete('/:postId', authenticateToken, authorizeRoles(ROLES.ADMIN, ROLES.MODERATOR), deletePost);
 
 // comments
 

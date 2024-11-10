@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
 import User from "../mongoose/schemas/user.js";
-import { Roles, Sort } from "../utils/enums.js";
+import { ROLES, SORT } from "../utils/enums.js";
 import { matchedData, validationResult } from "express-validator";
 
 export const getUser = async (req, res) => {
@@ -24,18 +24,18 @@ export const getUser = async (req, res) => {
 }
 
 export const getUsers = async (req, res) => {
-    const { limit = 10, cursor, sort = Sort.NEWEST, role } = req.query;
+    const { limit = 10, cursor, sort = SORT.LATEST, role } = req.query;
 
-    if (![Roles.MODERATOR, Roles.USER, Roles.ADMIN].includes(role)) return res.status(400).json({ message: "role query param is not valid, it should be either 'user' or 'moderator'" })
+    if (![ROLES.MODERATOR, ROLES.USER, ROLES.ADMIN].includes(role)) return res.status(400).json({ message: "role query param is not valid, it should be either 'user' or 'moderator'" })
 
     if (isNaN(limit)) return res.status(400).json({ message: "limit query param must be a number" });
 
     const sortQuery = {};
     switch (sort) {
-        case Sort.NEWEST:
+        case SORT.LATEST:
             sortQuery._id = -1;
             break;
-        case Sort.OLDEST:
+        case SORT.OLDEST:
             sortQuery._id = 1;
             break;
         default:
@@ -45,7 +45,7 @@ export const getUsers = async (req, res) => {
     const findQuery = { role };
     if (cursor) {
         if (!mongoose.isValidObjectId(cursor)) return res.status(400).json({ message: "cursor query param is not valid" });
-        if (sort === Sort.NEWEST) {
+        if (sort === SORT.LATEST) {
             findQuery._id = { $lt: cursor };
         } else {
             findQuery._id = { $gt: cursor };

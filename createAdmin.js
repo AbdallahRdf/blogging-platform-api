@@ -2,7 +2,7 @@ import inquirer from "inquirer";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User from "./src/mongoose/schemas/user.js";
-import { Roles } from "./src/utils/enums.js";
+import { ROLES } from "./src/utils/enums.js";
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING)
     .catch((error) => console.log(error));
@@ -61,7 +61,7 @@ const createAdmin = async () => {
         username,
         email,
         password: hash,
-        role: Roles.ADMIN,
+        role: ROLES.ADMIN,
         isActive: true 
     })
 

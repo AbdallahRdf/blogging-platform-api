@@ -4,7 +4,7 @@ import User from "../mongoose/schemas/user.js";
 import Comment from "../mongoose/schemas/comment.js"
 import Like from "../mongoose/schemas/like.js";
 import { matchedData, validationResult } from "express-validator";
-import { Sort } from "../utils/enums.js";
+import { SORT } from "../utils/enums.js";
 
 export const getPosts = async (req, res) => {
 
@@ -12,14 +12,14 @@ export const getPosts = async (req, res) => {
     if (!result.isEmpty()) {
         return res.status(400).json({ error: result.array() });
     }
-    const { limit = 8, cursor, sort = Sort.NEWEST, search = "", tags = "" } = matchedData(req);
+    const { limit = 9, cursor, sort = SORT.LATEST, search = "", tags = "" } = matchedData(req);
 
     // the sort query
     const sortQuery = {};
     switch (sort) {
-        case Sort.NEWEST: sortQuery._id = -1; break;
-        case Sort.OLDEST: sortQuery._id = 1; break;
-        case Sort.TOP: sortQuery.likes = -1; sortQuery._id = -1; break
+        case SORT.LATEST: sortQuery._id = -1; break;
+        case SORT.OLDEST: sortQuery._id = 1; break;
+        case SORT.TOP: sortQuery.likes = -1; sortQuery._id = -1; break
     }
 
     const findQuery = {};
@@ -32,19 +32,19 @@ export const getPosts = async (req, res) => {
     }
 
     if (tags !== "") {
-        const arrayOfTags = tags.toLowerCase().split(",");
+        const arrayOfTags = tags.split(",");
         findQuery.tags = { $in: arrayOfTags };
     }
 
     if (cursor) {
         switch (sort) {
-            case Sort.NEWEST:
+            case SORT.LATEST:
                 findQuery._id = { $lt: cursor };
                 break;
-            case Sort.OLDEST:
+            case SORT.OLDEST:
                 findQuery._id = { $gt: cursor };
                 break;
-            case Sort.TOP:
+            case SORT.TOP:
                 const lastPost = await Post.findById(cursor);
                 if (!lastPost) {
                     return res.status(400).json({ message: "Cursor does not exist" });
@@ -57,7 +57,7 @@ export const getPosts = async (req, res) => {
         }
     }
     try {
-        const posts = await Post.find(findQuery, { title: true, cover: true, tags: true, likes: true, dislikes: true, comments: true })
+        const posts = await Post.find(findQuery, { title: true, slug: true, cover: true, tags: true, likes: true, dislikes: true, comments: true, createdAt: true })
             .sort(sortQuery)
             .limit(limit)
             .exec();
@@ -113,11 +113,16 @@ export const createPost = async (req, res) => {
         const post = new Post({
             author: req.user.id,
             title,
+            slug: title
+                .toLowerCase()
+                .trim()
+                .replace(/[\s\W-]+/g, '-')  // Replace spaces and special characters with dashes
+                .replace(/^-+|-+$/g, ''), // Remove leading or trailing dashes
             description,
             headers,
             cover,
             content,
-            tags: tags.map(tag => tag.toLowerCase())
+            tags
         });
         await post.save();
 

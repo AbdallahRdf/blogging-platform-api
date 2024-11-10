@@ -4,7 +4,7 @@ import { matchedData, validationResult } from "express-validator";
 import Comment from "../mongoose/schemas/comment.js";
 import Post from "../mongoose/schemas/post.js";
 import Like from "../mongoose/schemas/like.js";
-import { Roles } from "../utils/enums.js";
+import { ROLES } from "../utils/enums.js";
 
 export const getCommentReplies = async (req, res) => {
     try {
@@ -170,7 +170,7 @@ export const deleteCommentReply = async (req, res) => {
         const reply = await Comment.findById(replyId);
         if (!reply) return res.status(404).json({ message: "reply not found" });
 
-        if ((Roles.USER === req.user.role) && (reply.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to create a post.' });
+        if ((ROLES.USER === req.user.role) && (reply.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to create a post.' });
 
         post.comments--;
         comment.replies--;

@@ -4,10 +4,10 @@ import User from "../mongoose/schemas/user.js";
 import Comment from "../mongoose/schemas/comment.js"
 import Like from "../mongoose/schemas/like.js";
 import { matchedData, validationResult } from "express-validator";
-import { Roles, Sort } from "../utils/enums.js";
+import { ROLES, SORT } from "../utils/enums.js";
 
 export const getComments = async (req, res) => {
-    const { limit = 10, cursor, sort = Sort.TOP } = req.query;
+    const { limit = 10, cursor, sort = SORT.TOP } = req.query;
     // is the limit query param valid
     if (isNaN(limit)) {
         return res.status(400).json({ message: "limit should be a number" });
@@ -16,9 +16,9 @@ export const getComments = async (req, res) => {
     // the sort query
     const sortQuery = {};
     switch (sort) {
-        case Sort.NEWEST: sortQuery._id = -1; break;
-        case Sort.OLDEST: sortQuery._id = 1; break;
-        case Sort.TOP: sortQuery.likes = -1; sortQuery._id = -1; break
+        case SORT.LATEST: sortQuery._id = -1; break;
+        case SORT.OLDEST: sortQuery._id = 1; break;
+        case SORT.TOP: sortQuery.likes = -1; sortQuery._id = -1; break
         default: return res.status(400).json({ message: "Invalid sort query param value" });
     }
 
@@ -30,7 +30,7 @@ export const getComments = async (req, res) => {
             return res.status(400).json({ message: "cursor is not valid" });
         }
 
-        if (sort === Sort.TOP) {
+        if (sort === SORT.TOP) {
             const lastComment = await Comment.findById(cursor);
             if (!lastComment) {
                 return res.status(400).json({ message: "Cursor does not exist" });
@@ -39,7 +39,7 @@ export const getComments = async (req, res) => {
                 { likes: { $lt: lastComment.likes } },
                 { likes: lastComment.likes, _id: { $lt: cursor } }
             ];
-        } else if (sort === Sort.NEWEST) {
+        } else if (sort === SORT.LATEST) {
             query._id = { $lt: cursor };
         } else {
             query._id = { $gt: cursor };
@@ -216,7 +216,7 @@ export const deleteComment = async (req, res) => {
         const comment = await Comment.findById(commentId);
         if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-        if ((Roles.USER === req.user.role) && (comment.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to delete this comment' });
+        if ((ROLES.USER === req.user.role) && (comment.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to delete this comment' });
 
         post.comments--;
 

@@ -1,5 +1,5 @@
 import mongoose, { Schema, SchemaTypes } from "mongoose";
-import { Roles } from "../../utils/enums.js";
+import { ROLES } from "../../utils/enums.js";
 
 const userSchema = new Schema({
     fullName: {
@@ -22,8 +22,8 @@ const userSchema = new Schema({
     },
     role: {
         type: SchemaTypes.String,
-        enum: Object.values(Roles),
-        default: Roles.USER
+        enum: Object.values(ROLES),
+        default: ROLES.USER
     },
     password: {
         type: SchemaTypes.String

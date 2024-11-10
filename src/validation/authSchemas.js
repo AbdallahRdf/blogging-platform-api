@@ -12,8 +12,8 @@ export const signupSchema = [
         .notEmpty()
         .isString()
         .withMessage('Invalid username')
-        .custom(async (value) => {
-            const user = await User.findOne({ username: value });
+        .custom(async (username) => {
+            const user = await User.findOne({ username });
             return !Boolean(user);
         })
         .withMessage('Username is already taken'),
@@ -21,8 +21,8 @@ export const signupSchema = [
         .normalizeEmail()
         .isEmail()
         .withMessage('Email address is not valid')
-        .custom(async (value) => {
-            const user = await User.findOne({ email: value });
+        .custom(async (email) => {
+            const user = await User.findOne({ email });
             return !Boolean(user);
         })
         .withMessage('Email address is already taken'),
@@ -36,7 +36,7 @@ export const signupSchema = [
             minSymbols: 1
         })
         .withMessage('Password must be at least 8 characters long and include one lowercase letter, one uppercase letter, one number, and one symbol.')
-    ];
+];
 
 export const loginSchema = [
     body('email')
@@ -44,16 +44,16 @@ export const loginSchema = [
         .isEmail()
         .withMessage('Email address is not valid'),
     body('password')
-    .trim()
-    .isStrongPassword({
-        minLength: 8,
-        minLowercase: 1,
-        minUppercase: 1,
-        minNumbers: 1,
-        minSymbols: 1
-    })
-    .escape()
-    .withMessage('Password must be at least 8 characters long and include one lowercase letter, one uppercase letter, one number, and one symbol.')
+        .trim()
+        .isStrongPassword({
+            minLength: 8,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+        })
+        .escape()
+        .withMessage('Password must be at least 8 characters long and include one lowercase letter, one uppercase letter, one number, and one symbol.')
 ];
 
 export const emailSchema = [

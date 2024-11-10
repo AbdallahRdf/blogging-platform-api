@@ -19,6 +19,7 @@ The following endpoints are accessible without authentication:
         {
             "_id": "66d1d3c74bad05be1b18a65e",
             "title": "Understanding JavaScript Closures",
+            "slug": "understanding-javaScript-closures",
             "cover": "blog-covers/c569be2e-0f2a-4ee0-aecf-c8076ab51829-url_sections.png",
             "tags": [
                 "javaScript",
@@ -33,7 +34,8 @@ The following endpoints are accessible without authentication:
         {
             "_id": "66d0f72469a2dcd4d9444556",
             "title": "Licensed reboot Lead",
-            "cover": "blog-covers/94a42798-d17a-4fed-bcfb-dbbbf0c7238c-Screenshot from 2024-07-11 19-18-19.png"
+            "slug": "licensed-reboot-lead",
+            "cover": "blog-covers/94a42798-d17a-4fed-bcfb-dbbbf0c7238c-Screenshot from 2024-07-11 19-18-19.png",
             "tags": [
                 "wooden",
                 "teal"
@@ -64,6 +66,7 @@ The following endpoints are accessible without authentication:
 {
     "_id": "66d1d3c74bad05be1b18a65e",
     "title": "Understanding JavaScript Closures",
+    "slug": "understanding-javaScript-closures",
     "cover": "blog-covers/c569be2e-0f2a-4ee0-aecf-c8076ab51829-url_sections.png",
     "description": "An in-depth guide to understanding closures in JavaScript.",
     "content": [
@@ -114,7 +117,7 @@ The following endpoints are accessible without authentication:
 ### `GET /api/posts/:postId/comments` - Get a list of comments on a specific post
 
 **Query Params** (all are optional):
-- `sort`: Sort order (`newest`, `top`, `oldest`), default is `top`.
+- `sort`: SORT order (`newest`, `top`, `oldest`), default is `top`.
 - `limit`: Number of comments to get. (default is 10)
 - `cursor`: Cursor for pagination.
 

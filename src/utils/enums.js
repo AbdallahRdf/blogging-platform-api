@@ -1,16 +1,16 @@
-export const Roles = Object.freeze({
+export const ROLES = Object.freeze({
     USER: "user",
     MODERATOR: "moderator",
     ADMIN: "admin"
 });
 
-export const Sort = Object.freeze({
-    NEWEST: "newest",
+export const SORT = Object.freeze({
+    LATEST: "latest",
     OLDEST: "oldest",
     TOP: "top"
 });
 
-export const postBodyBlocks = Object.freeze({
+export const POST_BODY_BLOCKS = Object.freeze({
     IMAGE: "Image",
     CODE_SNIPPET: "Code Snippet",
     CODE_OUTPUT: "Code Output",
