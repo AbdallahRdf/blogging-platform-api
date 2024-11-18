@@ -84,5 +84,6 @@ const postSchema = new Schema({
     })
 
 postSchema.index({ tags: 1 });
+postSchema.index({ slug: 1 });
 
 export default mongoose.model('Post', postSchema);

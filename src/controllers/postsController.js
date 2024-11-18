@@ -5,6 +5,7 @@ import Comment from "../mongoose/schemas/comment.js"
 import Like from "../mongoose/schemas/like.js";
 import { matchedData, validationResult } from "express-validator";
 import { SORT } from "../utils/enums.js";
+import getReaction from "../middleware/getReaction.js";
 
 export const getPosts = async (req, res) => {
 
@@ -39,10 +40,10 @@ export const getPosts = async (req, res) => {
     if (cursor) {
         switch (sort) {
             case SORT.LATEST:
-                findQuery._id = { $lt: cursor };
+                findQuery._id = { $lte: cursor };
                 break;
             case SORT.OLDEST:
-                findQuery._id = { $gt: cursor };
+                findQuery._id = { $gte: cursor };
                 break;
             case SORT.TOP:
                 const lastPost = await Post.findById(cursor);
@@ -51,7 +52,7 @@ export const getPosts = async (req, res) => {
                 }
                 findQuery.$or = [
                     { likes: { $lt: lastPost.likes } },
-                    { likes: lastPost.likes, _id: { $lt: cursor } }
+                    { likes: lastPost.likes, _id: { $lte: cursor } }
                 ];
                 break;
         }
@@ -59,10 +60,15 @@ export const getPosts = async (req, res) => {
     try {
         const posts = await Post.find(findQuery, { title: true, slug: true, cover: true, tags: true, likes: true, dislikes: true, comments: true, createdAt: true })
             .sort(sortQuery)
-            .limit(limit)
+            .limit(parseInt(limit) + 1)
             .exec();
 
-        const nextCursor = (posts.length && posts.length === parseInt(limit)) ? posts[posts.length - 1]._id : null;
+        // we will return a cursor pointing to the next post, if we return 9 posts, we will send back the curosr of the 10th post if there is one, or null if none.
+        let nextCursor = null;
+        if ((posts.length && posts.length === (parseInt(limit) + 1))) {
+            nextCursor = posts[posts.length - 1]._id;
+            posts.pop();
+        }
 
         return res.json({
             cursor: nextCursor,
@@ -75,12 +81,12 @@ export const getPosts = async (req, res) => {
 }
 
 export const getPost = async (req, res) => {
-    if (!mongoose.isValidObjectId(req.params.postId)) {
-        return res.status(400).json({ message: "Post id is not valid!" });
-    }
+    const postSlug = req.params.postSlug.trim();
+    if (postSlug === '') return res.status(400).json({ message: "Invalid post id" });
+
     try {
-        const foundPost = await Post.findById(req.params.postId, { __v: false, updatedAt: false })
-            .populate('author', 'fullName profileImage')
+        const foundPost = await Post.findOne({ slug: postSlug }, { __v: false, updatedAt: false })
+            .populate('author', 'fullName username profileImage')
             .lean();
 
         if (!foundPost) return res.status(404).json({ message: "Post not found!" });
@@ -90,6 +96,11 @@ export const getPost = async (req, res) => {
         console.log(error);
         return res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
+}
+
+export const getPostReaction = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.postId)) return res.status(400).json({ message: "Invalid post id" });
+    getReaction(req, res);
 }
 
 export const createPost = async (req, res) => {
@@ -215,9 +226,7 @@ export const likeOrDislikePost = async (req, res) => {
     const postId = req.params.postId;
     if (!mongoose.isValidObjectId(postId)) return res.status(400).json({ message: "Invalid post id" });
 
-    const { action } = req.body;
-
-    if (!["like", "dislike"].includes(action)) return res.status(400).json({ message: "Invalid action. Must be 'like' or 'dislike'." });
+    const { isLiked, isDisliked } = req.body;
 
     let session = null;
 
@@ -225,28 +234,50 @@ export const likeOrDislikePost = async (req, res) => {
         const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: "Post not found" });
 
-        const isLiked = action === "like";
-
         /*
-            likeDoc: check if there is already a Like doc for this post by the authenticated user and with comment field null,
+            likeDoc: check if there is already a Like document for this post by the authenticated user and with comment field null,
             so to update it, else create a new one
         */
         let likeDoc = await Like.findOne({ post: postId, user: req.user.id, comment: null });
-        // if the user is doing the same action (liking a post he already liked or the opposite)
-        if (likeDoc && likeDoc.isLiked === isLiked) return res.status(409).json({ message: `You already ${action}d this post` });
+        // if the user is doing the same reaction (liking a post he already liked or the opposite)
+        if (likeDoc && likeDoc.isLiked === isLiked && likeDoc.isDisliked === isDisliked) {
+            return res.status(409).json({ message: 'You have already performed this reaction on this post' });
+        }
 
         if (!likeDoc) {
+            // Create a new like document
             likeDoc = new Like({
                 user: req.user.id,
                 post: postId,
-                isLiked
+                isLiked,
+                isDisliked
             });
-        } else {
-            likeDoc.isLiked = isLiked;
-            isLiked ? post.dislikes-- : post.likes--;
-        }
 
-        isLiked ? post.likes++ : post.dislikes++;
+            // Increment likes or dislikes based on the initial reaction
+            if (isLiked) {
+                post.likes++;
+            } else if (isDisliked) {
+                post.dislikes++;
+            }
+        } else {
+            // Adjust counts based on the existing and new reactions
+            if (likeDoc.isLiked && !isLiked) {
+                post.likes--; // Removing a like
+            }
+            if (likeDoc.isDisliked && !isDisliked) {
+                post.dislikes--; // Removing a dislike
+            }
+            if (!likeDoc.isLiked && isLiked) {
+                post.likes++; // Adding a like
+            }
+            if (!likeDoc.isDisliked && isDisliked) {
+                post.dislikes++; // Adding a dislike
+            }
+
+            // Update the like document
+            likeDoc.isLiked = isLiked;
+            likeDoc.isDisliked = isDisliked;
+        }
 
         session = await mongoose.startSession();
         session.startTransaction();

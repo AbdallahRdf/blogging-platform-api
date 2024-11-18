@@ -5,6 +5,7 @@ import Comment from "../mongoose/schemas/comment.js";
 import Post from "../mongoose/schemas/post.js";
 import Like from "../mongoose/schemas/like.js";
 import { ROLES } from "../utils/enums.js";
+import getReaction from "../middleware/getReaction.js";
 
 export const getCommentReplies = async (req, res) => {
     try {
@@ -18,6 +19,11 @@ export const getCommentReplies = async (req, res) => {
         console.log(error);
         return res.status(500).json(error);
     }
+}
+
+export const getReplyReaction = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.replyId)) return res.status(400).json({ message: "Invalid comment reply id" });
+    getReaction(req, res);
 }
 
 export const createCommentReply = async (req, res) => {
@@ -95,9 +101,7 @@ export const likeOrDislikeReply = async (req, res) => {
 
     if (!mongoose.isValidObjectId(replyId)) return res.status(400).json({ message: "Invalid comment reply id" });
 
-    const { action } = req.body;
-
-    if (!["like", "dislike"].includes(action)) return res.status(400).json({ message: "Invalid action. Must be 'like' or 'dislike'." });
+    const { isLiked, isDisliked } = req.body;
 
     let session = null;
 
@@ -105,29 +109,50 @@ export const likeOrDislikeReply = async (req, res) => {
         const reply = await Comment.findOne({ _id: replyId, post: postId, replyTo: commentId });
         if (!reply) return res.status(404).json({ message: "Comment not found" });
 
-        const isLiked = action === "like";
-
         /*
             likeDoc: check if there is already a Like doc for this post by the authenticated user and with comment field null,
             so to update it, else create a new one
         */
         let likeDoc = await Like.findOne({ post: postId, user: req.user.id, comment: replyId });
         // if the user is doing the same action (liking a post he already liked or the opposite)
-        if (likeDoc && likeDoc.isLiked === isLiked) return res.status(409).json({ message: `You already ${action}d this comment` });
+        if (likeDoc && likeDoc.isLiked === isLiked && likeDoc.isDisliked === isDisliked) {
+            return res.status(409).json({ message: `You already ${action}d this comment` });
+        }
 
         if (!likeDoc) {
+            // Create a new like document
             likeDoc = new Like({
                 user: req.user.id,
                 post: postId,
                 comment: replyId,
-                isLiked
+                isLiked,
+                isDisliked
             });
-        } else {
-            likeDoc.isLiked = isLiked;
-            isLiked ? reply.dislikes-- : reply.likes--;
-        }
 
-        isLiked ? reply.likes++ : reply.dislikes++;
+            // Increment likes or dislikes based on the initial reaction
+            if (isLiked) {
+                reply.likes++;
+            } else if (isDisliked) {
+                reply.dislikes++;
+            }
+        } else {
+            // Adjust counts based on the existing and new reactions
+            if (likeDoc.isLiked && !isLiked) {
+                reply.likes--; // Removing a like
+            }
+            if (likeDoc.isDisliked && !isDisliked) {
+                reply.dislikes--; // Removing a dislike
+            }
+            if (!likeDoc.isLiked && isLiked) {
+                reply.likes++; // Adding a like
+            }
+            if (!likeDoc.isDisliked && isDisliked) {
+                reply.dislikes++; // Adding a dislike
+            }
+            // Update the like document
+            likeDoc.isLiked = isLiked;
+            likeDoc.isDisliked = isDisliked;
+        }
 
         session = await mongoose.startSession();
         session.startTransaction();

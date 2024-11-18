@@ -142,7 +142,7 @@ export const postUpdateScema = [
         .withMessage('Each tag must be a string')
 ];
 
-export const getPostSchema = [
+export const getPostsSchema = [
     query('limit')
         .optional()
         .isInt({ min: 1 })

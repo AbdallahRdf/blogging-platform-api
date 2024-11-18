@@ -5,9 +5,11 @@ import Comment from "../mongoose/schemas/comment.js"
 import Like from "../mongoose/schemas/like.js";
 import { matchedData, validationResult } from "express-validator";
 import { ROLES, SORT } from "../utils/enums.js";
+import getReaction from "../middleware/getReaction.js";
 
 export const getComments = async (req, res) => {
     const { limit = 10, cursor, sort = SORT.TOP } = req.query;
+
     // is the limit query param valid
     if (isNaN(limit)) {
         return res.status(400).json({ message: "limit should be a number" });
@@ -37,25 +39,31 @@ export const getComments = async (req, res) => {
             }
             query.$or = [
                 { likes: { $lt: lastComment.likes } },
-                { likes: lastComment.likes, _id: { $lt: cursor } }
+                { likes: lastComment.likes, _id: { $lte: cursor } }
             ];
         } else if (sort === SORT.LATEST) {
-            query._id = { $lt: cursor };
+            query._id = { $lte: cursor };
         } else {
-            query._id = { $gt: cursor };
+            query._id = { $gte: cursor };
         }
     }
 
     try {
         const comments = await Comment.find(query, { __v: false, replyTo: false, updatedAt: false })
             .sort(sortQuery)
-            .limit(limit)
+            .limit(parseInt(limit) + 1)
             .populate('owner', 'username profileImage')
             .exec();
 
-        const length = comments.length;
+        const commentsLength = comments.length;
 
-        const nextCursor = (length && length >= parseInt(limit)) ? comments[length - 1]._id : null;
+        // we will return a cursor pointing to the next comment, if we return 9 comments, we will send back the curosr of the 10th comment if there is one, or null if none.
+        let nextCursor = null;
+
+        if ((commentsLength && commentsLength === (parseInt(limit) + 1))) {
+            nextCursor = comments[commentsLength - 1]._id;
+            comments.pop();
+        }
 
         return res.status(200).json({ cursor: nextCursor, comments });
     } catch (error) {
@@ -75,6 +83,11 @@ export const getComment = async (req, res) => {
         console.log(error);
         return res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
+}
+
+export const getCommentReaction = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.commentId)) return res.status(400).json({ message: "Invalid comment id" });
+    getReaction(req, res);
 }
 
 export const createComment = async (req, res) => {
@@ -145,9 +158,7 @@ export const likeOrDislikeComment = async (req, res) => {
 
     if (!mongoose.isValidObjectId(commentId)) return res.status(400).json({ message: "Invalid comment id" });
 
-    const { action } = req.body;
-
-    if (!["like", "dislike"].includes(action)) return res.status(400).json({ message: "Invalid action. Must be 'like' or 'dislike'." });
+    const { isLiked, isDisliked } = req.body;
 
     let session = null;
 
@@ -155,29 +166,51 @@ export const likeOrDislikeComment = async (req, res) => {
         const comment = await Comment.findOne({ _id: commentId, post: postId });
         if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-        const isLiked = action === "like";
-
         /*
             likeDoc: check if there is already a Like doc for this post by the authenticated user and with comment field null,
             so to update it, else create a new one
         */
         let likeDoc = await Like.findOne({ post: postId, user: req.user.id, comment: commentId });
         // if the user is doing the same action (liking a post he already liked or the opposite)
-        if (likeDoc && likeDoc.isLiked === isLiked) return res.status(409).json({ message: `You already ${action}d this comment` });
+        if (likeDoc && likeDoc.isLiked === isLiked && likeDoc.isDisliked === isDisliked) {
+            return res.status(409).json({ message: `You already ${action}d this comment` });
+        }
 
         if (!likeDoc) {
+            // Create a new like document
             likeDoc = new Like({
                 user: req.user.id,
                 post: postId,
                 comment: commentId,
-                isLiked
+                isLiked,
+                isDisliked
             });
-        } else {
-            likeDoc.isLiked = isLiked;
-            isLiked ? comment.dislikes-- : comment.likes--;
-        }
 
-        isLiked ? comment.likes++ : comment.dislikes++;
+            // Increment likes or dislikes based on the initial reaction
+            if (isLiked) {
+                comment.likes++;
+            } else if (isDisliked) {
+                comment.dislikes++;
+            }
+        } else {
+            // Adjust counts based on the existing and new reactions
+            if (likeDoc.isLiked && !isLiked) {
+                comment.likes--; // Removing a like
+            }
+            if (likeDoc.isDisliked && !isDisliked) {
+                comment.dislikes--; // Removing a dislike
+            }
+            if (!likeDoc.isLiked && isLiked) {
+                comment.likes++; // Adding a like
+            }
+            if (!likeDoc.isDisliked && isDisliked) {
+                comment.dislikes++; // Adding a dislike
+            }
+
+            // Update the like document
+            likeDoc.isLiked = isLiked;
+            likeDoc.isDisliked = isDisliked;
+        }
 
         session = await mongoose.startSession();
         session.startTransaction();

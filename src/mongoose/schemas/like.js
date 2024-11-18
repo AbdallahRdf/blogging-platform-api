@@ -14,12 +14,18 @@ const likeSchema = new Schema({
     comment: {
         type: SchemaTypes.ObjectId,
         ref: 'Comment',
-        required: false, // if this is null, then it is a post like, else it is a comment like
+        required: false, // if this is null, then it is a post reaction, else it is a comment reaction
         default: null
     },
     isLiked: {
         type: SchemaTypes.Boolean,
-        required: true // true for like, false for dislike
+        required: true,
+        default: false
+    },
+    isDisliked: {
+        type: SchemaTypes.Boolean,
+        required: true,
+        default: false
     }
 }, {
     timestamps: true
