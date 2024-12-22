@@ -136,6 +136,9 @@ export const resendActivationEmail = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+        if (user.isActive) {
+            return res.status(400).json({ message: "Your account is already activated" });
+        }
 
         const token = crypto.randomBytes(32).toString('hex');
 
