@@ -8,9 +8,10 @@ import { ROLES, SORT } from "../utils/enums.js";
 import getReaction from "../middleware/getReaction.js";
 
 export const getComments = async (req, res) => {
-    const { limit = 10, cursor, sort = SORT.TOP } = req.query;
+    let { limit = 10, cursor, sort = SORT.TOP } = req.query;
 
     // is the limit query param valid
+    limit = parseInt(limit);
     if (isNaN(limit)) {
         return res.status(400).json({ message: "limit should be a number" });
     }
@@ -49,9 +50,15 @@ export const getComments = async (req, res) => {
     }
 
     try {
+        const commentsCount = await Comment.countDocuments({ post: req.params.postId });
+
+        if (commentsCount === 0) {
+            return res.status(200).json({ cursor: null, commentsCount, comments: [] });
+        }
+
         const comments = await Comment.find(query, { __v: false, replyTo: false, updatedAt: false })
             .sort(sortQuery)
-            .limit(parseInt(limit) + 1)
+            .limit(limit + 1)
             .populate('owner', 'username profileImage')
             .exec();
 
@@ -60,12 +67,12 @@ export const getComments = async (req, res) => {
         // we will return a cursor pointing to the next comment, if we return 9 comments, we will send back the curosr of the 10th comment if there is one, or null if none.
         let nextCursor = null;
 
-        if ((commentsLength && commentsLength === (parseInt(limit) + 1))) {
+        if ((commentsLength && (commentsLength === limit + 1))) {
             nextCursor = comments[commentsLength - 1]._id;
             comments.pop();
         }
 
-        return res.status(200).json({ cursor: nextCursor, comments });
+        return res.status(200).json({ cursor: nextCursor, commentsCount, comments });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: `Internal server error: ${error.message}` });
@@ -173,7 +180,7 @@ export const likeOrDislikeComment = async (req, res) => {
         let likeDoc = await Like.findOne({ post: postId, user: req.user.id, comment: commentId });
         // if the user is doing the same action (liking a post he already liked or the opposite)
         if (likeDoc && likeDoc.isLiked === isLiked && likeDoc.isDisliked === isDisliked) {
-            return res.status(409).json({ message: `You already ${action}d this comment` });
+            return res.status(409).json({ message: `You already did this action` });
         }
 
         if (!likeDoc) {

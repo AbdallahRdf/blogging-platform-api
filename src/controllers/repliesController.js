@@ -8,13 +8,50 @@ import { ROLES } from "../utils/enums.js";
 import getReaction from "../middleware/getReaction.js";
 
 export const getCommentReplies = async (req, res) => {
-    try {
-        const replies = await Comment.find({ post: req.params.postId, replyTo: req.params.commentId }, { __v: false, replyTo: false })
-            .populate("owner", "username profileImage")
-            .sort({ _id: -1 })
-            .lean();
+    let { limit = 20, cursor } = req.query;
+    const { postId, commentId } = req.params;
 
-        return res.status(200).json({ replies });
+    // is the limit query param valid
+    limit = parseInt(limit);
+    if (isNaN(limit)) {
+        return res.status(400).json({ message: "limit should be a number" });
+    }
+
+    // the find() query
+    const query = { post: postId, replyTo: commentId };
+    if (cursor) {
+        // is cursor valid
+        if (!mongoose.isValidObjectId(cursor)) {
+            return res.status(400).json({ message: "cursor is not valid" });
+        }
+
+        query._id = { $gte: cursor };
+    }
+
+    try {
+        const repliesCount = await Comment.countDocuments({ post: postId, replyTo: commentId });
+
+        if (repliesCount === 0) {
+            return res.status(404).json({ cursor: null, repliesCount, replies: [] });
+        }
+
+        const replies = await Comment.find(query, { __v: false, replyTo: false })
+            .sort({ _id: "ascending" }) // from the oldest reply to the newest
+            .limit(limit + 1)
+            .populate("owner", "username profileImage")
+            .exec();
+
+        const repliesLength = replies.length;
+
+        // we will return a cursor pointing to the next comment, if we return 9 replies, we will send back the curosr of the 10th comment if there is one, or null if none.
+        let nextCursor = null;
+
+        if ((repliesLength && (repliesLength === limit + 1))) {
+            nextCursor = replies[repliesLength - 1]._id;
+            replies.pop();
+        }
+
+        return res.status(200).json({ cursor: nextCursor, repliesCount, replies });
     } catch (error) {
         console.log(error);
         return res.status(500).json(error);
@@ -29,7 +66,7 @@ export const getReplyReaction = async (req, res) => {
 export const createCommentReply = async (req, res) => {
     const result = validationResult(req);
     if (!result.isEmpty()) return res.status(400).json({ errors: result.array() });
-    const { commentId, postId, body } = matchedData(req);
+    const { commentId, parentUsername, postId, body } = matchedData(req);
 
     let session = null;
     try {
@@ -42,6 +79,7 @@ export const createCommentReply = async (req, res) => {
         const reply = new Comment({
             post: postId,
             replyTo: commentId,
+            parentUsername,
             owner: req.user.id,
             body,
         });

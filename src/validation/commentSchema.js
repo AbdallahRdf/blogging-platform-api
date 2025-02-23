@@ -20,6 +20,12 @@ export const commentUpdateSchema = [
     param('commentId')
         .isMongoId()
         .withMessage('Invalid comment id'),
+    body("parentUsername")
+        .trim()
+        .notEmpty()
+        .withMessage('Parent comment username must not be empty')
+        .isString()
+        .withMessage('Parent comment username must be a string'),
     body('body')
         .trim()
         .notEmpty()

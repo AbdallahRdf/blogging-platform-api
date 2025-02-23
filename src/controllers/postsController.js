@@ -91,7 +91,7 @@ export const getPost = async (req, res) => {
 
         if (!foundPost) return res.status(404).json({ message: "Post not found!" });
 
-        return res.status(200).json(foundPost);
+        return res.json(foundPost);
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: `Internal server error: ${error.message}` });

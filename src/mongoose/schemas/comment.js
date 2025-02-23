@@ -11,6 +11,10 @@ const commentSchema = new Schema({
         ref: 'Comment',
         default: null // If this is null, it's a top-level comment
     },
+    parentUsername: {  // Stores the username of the parent comment owner
+        type: SchemaTypes.String,
+        default: null  // Only relevant for replies
+    },
     owner: {
         type: SchemaTypes.ObjectId,
         ref: 'User',
