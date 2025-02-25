@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 import { matchedData, validationResult } from "express-validator";
 
 import Comment from "../mongoose/schemas/comment.js";
+import Reply from "../mongoose/schemas/reply.js";
 import Post from "../mongoose/schemas/post.js";
 import Like from "../mongoose/schemas/like.js";
 import { ROLES } from "../utils/enums.js";
-import getReaction from "../middleware/getReaction.js";
 
 export const getCommentReplies = async (req, res) => {
     let { limit = 20, cursor } = req.query;
@@ -18,24 +18,17 @@ export const getCommentReplies = async (req, res) => {
     }
 
     // the find() query
-    const query = { post: postId, replyTo: commentId };
+    const query = { postId, parentCommentId: commentId };
     if (cursor) {
         // is cursor valid
         if (!mongoose.isValidObjectId(cursor)) {
             return res.status(400).json({ message: "cursor is not valid" });
         }
-
         query._id = { $gte: cursor };
     }
 
     try {
-        const repliesCount = await Comment.countDocuments({ post: postId, replyTo: commentId });
-
-        if (repliesCount === 0) {
-            return res.status(404).json({ cursor: null, repliesCount, replies: [] });
-        }
-
-        const replies = await Comment.find(query, { __v: false, replyTo: false })
+        const replies = await Reply.find(query, { __v: false, parentCommentId: false, replyId: false })
             .sort({ _id: "ascending" }) // from the oldest reply to the newest
             .limit(limit + 1)
             .populate("owner", "username profileImage")
@@ -51,35 +44,36 @@ export const getCommentReplies = async (req, res) => {
             replies.pop();
         }
 
-        return res.status(200).json({ cursor: nextCursor, repliesCount, replies });
+        return res.status(200).json({ cursor: nextCursor, replies });
     } catch (error) {
         console.log(error);
         return res.status(500).json(error);
     }
 }
 
-export const getReplyReaction = async (req, res) => {
-    if (!mongoose.isValidObjectId(req.params.replyId)) return res.status(400).json({ message: "Invalid comment reply id" });
-    getReaction(req, res);
-}
-
 export const createCommentReply = async (req, res) => {
     const result = validationResult(req);
     if (!result.isEmpty()) return res.status(400).json({ errors: result.array() });
-    const { commentId, parentUsername, postId, body } = matchedData(req);
+    const { postId, commentId, replyUsername, replyId, body } = matchedData(req);
 
     let session = null;
     try {
         const post = await Post.findById(postId);
         if (!post) return res.status(404).json({ message: "Post not found" });
 
-        const comment = await Comment.findOne({ _id: commentId, post: postId });
+        const comment = await Comment.findOne({ _id: commentId, postId })
+            .populate("owner", "username")
+            .exec();
         if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-        const reply = new Comment({
-            post: postId,
-            replyTo: commentId,
-            parentUsername,
+        const reply = await Reply.findOne({ _id: replyId, postId, parentCommentId: commentId });
+        if (!reply && replyUsername !== comment.owner.username) return res.status(404).json({ message: "Reply not found" });
+
+        const newReply = new Reply({
+            postId,
+            parentCommentId: commentId,
+            replyId,
+            replyUsername,
             owner: req.user.id,
             body,
         });
@@ -89,7 +83,7 @@ export const createCommentReply = async (req, res) => {
         session = await mongoose.startSession();
         session.startTransaction();
 
-        await reply.save({ session });
+        await newReply.save({ session });
         await post.save({ session });
         await comment.save({ session });
 
@@ -116,7 +110,7 @@ export const updateCommentReply = async (req, res) => {
     if (!result.isEmpty()) return res.status(400).json({ errors: result.array() });
     const { postId, commentId, replyId, body } = matchedData(req);
     try {
-        const reply = await Comment.findOne({ _id: replyId, post: postId, replyTo: commentId });
+        const reply = await Reply.findOne({ _id: replyId, postId, parentCommentId: commentId });
         if (!reply) return res.status(404).json({ message: "Comment reply not found" });
         if (reply.owner.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
         reply.body = body;
@@ -144,7 +138,7 @@ export const likeOrDislikeReply = async (req, res) => {
     let session = null;
 
     try {
-        const reply = await Comment.findOne({ _id: replyId, post: postId, replyTo: commentId });
+        const reply = await Reply.findOne({ _id: replyId, postId, parentCommentId: commentId });
         if (!reply) return res.status(404).json({ message: "Comment not found" });
 
         /*
@@ -230,7 +224,7 @@ export const deleteCommentReply = async (req, res) => {
         const comment = await Comment.findById(commentId);
         if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-        const reply = await Comment.findById(replyId);
+        const reply = await Reply.findById(replyId);
         if (!reply) return res.status(404).json({ message: "reply not found" });
 
         if ((ROLES.USER === req.user.role) && (reply.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to create a post.' });
@@ -244,7 +238,7 @@ export const deleteCommentReply = async (req, res) => {
         await post.save({ session });
         await comment.save({ session });
         await reply.deleteOne().session(session);
-        await Comment.deleteMany({ replyTo: replyId }).session(session); // replies of the current reply to be deleted
+        await Reply.deleteMany({ replyId }).session(session); // replies of the current reply to be deleted
         await Like.deleteMany({ comment: replyId }).session(session); // delete the likes doc for the reply doc
 
         await session.commitTransaction();

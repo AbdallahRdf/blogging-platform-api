@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 import Post from "../mongoose/schemas/post.js";
 import User from "../mongoose/schemas/user.js";
 import Comment from "../mongoose/schemas/comment.js"
+import Reply from "../mongoose/schemas/reply.js"
 import Like from "../mongoose/schemas/like.js";
 import { matchedData, validationResult } from "express-validator";
 import { ROLES, SORT } from "../utils/enums.js";
-import getReaction from "../middleware/getReaction.js";
 
 export const getComments = async (req, res) => {
     let { limit = 10, cursor, sort = SORT.TOP } = req.query;
@@ -26,7 +26,7 @@ export const getComments = async (req, res) => {
     }
 
     // the find() query
-    const query = { post: req.params.postId, replyTo: null };
+    const query = { postId: req.params.postId };
     if (cursor) {
         // is cursor valid
         if (!mongoose.isValidObjectId(cursor)) {
@@ -50,13 +50,15 @@ export const getComments = async (req, res) => {
     }
 
     try {
-        const commentsCount = await Comment.countDocuments({ post: req.params.postId });
+        const commentsCount = await Comment.countDocuments({ postId: req.params.postId });
 
         if (commentsCount === 0) {
             return res.status(200).json({ cursor: null, commentsCount, comments: [] });
         }
 
-        const comments = await Comment.find(query, { __v: false, replyTo: false, updatedAt: false })
+        const repliesCount = await Reply.countDocuments({ postId: req.params.postId });
+
+        const comments = await Comment.find(query, { __v: false, updatedAt: false })
             .sort(sortQuery)
             .limit(limit + 1)
             .populate('owner', 'username profileImage')
@@ -72,30 +74,25 @@ export const getComments = async (req, res) => {
             comments.pop();
         }
 
-        return res.status(200).json({ cursor: nextCursor, commentsCount, comments });
+        return res.status(200).json({ cursor: nextCursor, commentsCount: commentsCount + repliesCount, comments });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
 }
 
-export const getComment = async (req, res) => {
-    try {
-        const comment = await Comment.findOne({ _id: req.params.commentId, post: req.params.postId, replyTo: null }, { __v: false, replyTo: false, updatedAt: false })
-            .populate('owner', 'username profileImage')
-            .lean();
+// export const getComment = async (req, res) => {
+//     try {
+//         const comment = await Comment.findOne({ _id: req.params.commentId, post: req.params.postId, replyTo: null }, { __v: false, replyTo: false, updatedAt: false })
+//             .populate('owner', 'username profileImage')
+//             .lean();
 
-        return res.status(200).json(comment);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: `Internal server error: ${error.message}` });
-    }
-}
-
-export const getCommentReaction = async (req, res) => {
-    if (!mongoose.isValidObjectId(req.params.commentId)) return res.status(400).json({ message: "Invalid comment id" });
-    getReaction(req, res);
-}
+//         return res.status(200).json(comment);
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: `Internal server error: ${error.message}` });
+//     }
+// }
 
 export const createComment = async (req, res) => {
     const result = validationResult(req);
@@ -108,7 +105,7 @@ export const createComment = async (req, res) => {
         if (!post) return res.status(404).json({ message: "Post not found" });
 
         const comment = new Comment({
-            post: postId,
+            postId,
             owner: req.user.id,
             body,
         });
@@ -143,7 +140,7 @@ export const updateComment = async (req, res) => {
     if (!result.isEmpty()) return res.status(400).json({ errors: result.array() });
     const { postId, commentId, body } = matchedData(req);
     try {
-        const comment = await Comment.findOne({ _id: commentId, post: postId, replyTo: null });
+        const comment = await Comment.findOne({ _id: commentId, postId });
         if (!comment) return res.status(404).json({ message: "Comment not found" });
         if (comment.owner.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
         comment.body = body;
@@ -170,7 +167,7 @@ export const likeOrDislikeComment = async (req, res) => {
     let session = null;
 
     try {
-        const comment = await Comment.findOne({ _id: commentId, post: postId });
+        const comment = await Comment.findOne({ _id: commentId, postId });
         if (!comment) return res.status(404).json({ message: "Comment not found" });
 
         /*
@@ -266,7 +263,7 @@ export const deleteComment = async (req, res) => {
         await post.save({ session });
 
         await comment.deleteOne().session(session);
-        await Comment.deleteMany({ replyTo: commentId }).session(session);
+        await Reply.deleteMany({ parentCommentId: commentId }).session(session);
         await Like.deleteMany({ comment: commentId }).session(session);
 
         await session.commitTransaction();

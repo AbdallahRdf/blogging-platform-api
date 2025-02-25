@@ -9,10 +9,9 @@ export const commentCreationSchema = [
         .notEmpty()
         .withMessage('Comment must not be empty')
         .isString()
-        .withMessage('Comment must be a string')   
+        .withMessage('Comment must be a string')
 ];
 
-// can also be used as a comment reply creation schema
 export const commentUpdateSchema = [
     param('postId')
         .isMongoId()
@@ -20,7 +19,25 @@ export const commentUpdateSchema = [
     param('commentId')
         .isMongoId()
         .withMessage('Invalid comment id'),
-    body("parentUsername")
+    body('body')
+        .trim()
+        .notEmpty()
+        .withMessage('Comment must not be empty')
+        .isString()
+        .withMessage('Comment must be a string')
+];
+
+export const replyCreationSchema = [
+    param('postId')
+        .isMongoId()
+        .withMessage('Invalid post id'),
+    param('commentId')
+        .isMongoId()
+        .withMessage('Invalid comment id'),
+    body('replyId')
+        .isMongoId()
+        .withMessage('Invalid reply id'),
+    body("replyUsername")
         .trim()
         .notEmpty()
         .withMessage('Parent comment username must not be empty')
@@ -31,7 +48,7 @@ export const commentUpdateSchema = [
         .notEmpty()
         .withMessage('Comment must not be empty')
         .isString()
-        .withMessage('Comment must be a string')   
+        .withMessage('Comment must be a string')
 ];
 
 export const replyUpdateSchema = [
@@ -43,11 +60,11 @@ export const replyUpdateSchema = [
         .withMessage('Invalid comment id'),
     param('replyId')
         .isMongoId()
-        .withMessage('Invalid comment id'),
+        .withMessage('Invalid reply id'),
     body('body')
         .trim()
         .notEmpty()
         .withMessage('Comment must not be empty')
         .isString()
-        .withMessage('Comment must be a string')   
+        .withMessage('Comment must be a string')
 ];

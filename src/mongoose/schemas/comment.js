@@ -1,19 +1,10 @@
 import mongoose, { Schema, SchemaTypes } from "mongoose";
 
 const commentSchema = new Schema({
-    post: {
+    postId: {
         type: SchemaTypes.ObjectId,
         ref: 'Post',
         required: true
-    },
-    replyTo: {
-        type: SchemaTypes.ObjectId,
-        ref: 'Comment',
-        default: null // If this is null, it's a top-level comment
-    },
-    parentUsername: {  // Stores the username of the parent comment owner
-        type: SchemaTypes.String,
-        default: null  // Only relevant for replies
     },
     owner: {
         type: SchemaTypes.ObjectId,
@@ -37,12 +28,11 @@ const commentSchema = new Schema({
         default: 0
     }
 },
-{
-    timestamps: true
-});
+    {
+        timestamps: true
+    });
 
-commentSchema.index({ post: 1 });
-commentSchema.index({ replyTo: 1 });
+commentSchema.index({ postId: 1 });
 commentSchema.index({ owner: 1 });
 
 export default mongoose.model('Comment', commentSchema);

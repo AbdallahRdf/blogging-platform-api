@@ -20,6 +20,10 @@ const userSchema = new Schema({
         type: SchemaTypes.String,
         default: null
     },
+    bio: {
+        type: SchemaTypes.String,
+        default: null
+    },
     role: {
         type: SchemaTypes.String,
         enum: Object.values(ROLES),
