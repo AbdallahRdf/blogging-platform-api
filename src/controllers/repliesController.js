@@ -112,7 +112,7 @@ export const updateCommentReply = async (req, res) => {
     try {
         const reply = await Reply.findOne({ _id: replyId, postId, parentCommentId: commentId });
         if (!reply) return res.status(404).json({ message: "Comment reply not found" });
-        if (reply.owner.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
+        if (reply.owner.toString() !== req.user.id.toString()) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
         reply.body = body;
         await reply.save();
 
@@ -227,7 +227,7 @@ export const deleteCommentReply = async (req, res) => {
         const reply = await Reply.findById(replyId);
         if (!reply) return res.status(404).json({ message: "reply not found" });
 
-        if ((ROLES.USER === req.user.role) && (reply.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to create a post.' });
+        if ((ROLES.USER === req.user.role) && (reply.owner.toString() !== req.user.id.toString())) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to create a post.' });
 
         post.comments--;
         comment.replies--;
@@ -238,7 +238,6 @@ export const deleteCommentReply = async (req, res) => {
         await post.save({ session });
         await comment.save({ session });
         await reply.deleteOne().session(session);
-        await Reply.deleteMany({ replyId }).session(session); // replies of the current reply to be deleted
         await Like.deleteMany({ comment: replyId }).session(session); // delete the likes doc for the reply doc
 
         await session.commitTransaction();

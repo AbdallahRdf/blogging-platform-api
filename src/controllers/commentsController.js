@@ -142,7 +142,7 @@ export const updateComment = async (req, res) => {
     try {
         const comment = await Comment.findOne({ _id: commentId, postId });
         if (!comment) return res.status(404).json({ message: "Comment not found" });
-        if (comment.owner.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
+        if (comment.owner.toString() !== req.user.id.toString()) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to update this comment.' });
         comment.body = body;
         await comment.save();
 
@@ -252,8 +252,9 @@ export const deleteComment = async (req, res) => {
 
         const comment = await Comment.findById(commentId);
         if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-        if ((ROLES.USER === req.user.role) && (comment.owner.toString() !== req.user.id)) return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to delete this comment' });
+        
+        if ((ROLES.USER === req.user.role) && (comment.owner.toString() !== req.user.id.toString())) 
+            return res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to delete this comment' });
 
         post.comments--;
 
