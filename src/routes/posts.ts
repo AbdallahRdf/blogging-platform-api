@@ -4,7 +4,7 @@ import { createComment, deleteComment, getComments, likeComment, updateComment }
 import authenticateToken from "../middleware/authenticateToken";
 import { getPostsSchema, postCreationSchema, postUpdateSchema } from "../validators/post";
 import { commentCreationSchema, commentUpdateSchema, getCommentsSchema, replyCreationSchema, replyUpdateSchema } from "../validators/comment";
-import { createNestedReply, createReply, deleteCommentReply, getCommentReplies, likeReply, updateReply } from "../controllers/repliesController";
+import { createReply, deleteCommentReply, getCommentReplies, likeReply, updateReply } from "../controllers/repliesController";
 import authorizeRoles from "../middleware/authorizeRoles";
 import { Roles } from "../enums/user.enums";
 import checkPostExists from "../middleware/checkPostExists";
@@ -52,8 +52,6 @@ router.get('/:postId/comments/:commentId/replies', checkPostExists, checkComment
 router.get('/:postId/comments/:commentId/replies/:replyId/likes/status', authenticateToken, checkPostExists, checkCommentExists, getLikeStatus);
 
 router.post('/:postId/comments/:commentId/replies', authenticateToken, replyCreationSchema, createReply);
-
-router.post('/:postId/comments/:commentId/replies/replyId', authenticateToken, replyCreationSchema, createNestedReply);
 
 router.post('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, checkPostExists, checkCommentExists, likeReply);
 

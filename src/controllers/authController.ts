@@ -118,7 +118,6 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 }
 
-
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies.refreshToken as string;
 
@@ -149,10 +148,6 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     } catch (error) {
         next(error);
     }
-}
-
-export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).json({ accessToken: req.newAccessToken });
 }
 
 export const handlePasswordReset = async (req: Request, res: Response, next: NextFunction) => {

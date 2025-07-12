@@ -7,8 +7,8 @@
   "scripts": {
     "build": "tsc --build",
     "start": "node ./dist/server.js",
-    "dev": "tsx --env-file=.env --watch ./test.ts",
-    "create-admin": "node --env-file=.env createAdmin.js"
+    "dev": "tsx --env-file=.env --watch ./src/server.ts",
+    "create-admin": "tsx --env-file=.env createAdmin.ts"
   },
   "keywords": [],
   "author": "",

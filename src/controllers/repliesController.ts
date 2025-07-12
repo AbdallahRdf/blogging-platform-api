@@ -104,68 +104,6 @@ export const createReply = async (req: Request, res: Response, next: NextFunctio
     }
 }
 
-export const createNestedReply = async (req: Request, res: Response, next: NextFunction) => {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-        res.status(400).json({ errors: result.array() });
-        return;
-    }
-    const { postId, commentId, replyId, replyToUsername, body } = matchedData<Omit<IReply, 'author' | 'likes'> & { replyId: ObjectId }>(req);
-
-    let session = null;
-    try {
-        const post = await Post.findById(postId);
-        if (!post) {
-            res.status(404).json({ message: "Post not found" });
-            return;
-        }
-
-        const comment = await Comment.findOne({ _id: commentId, postId });
-        if (!comment) {
-            res.status(404).json({ message: "Comment not found" });
-            return;
-        }
-
-        const reply = await Reply.exists({ _id: replyId, postId });
-        if (!reply) {
-            res.status(404).json({ message: "Reply not found" });
-            return;
-        }
-
-        const newReply = new Reply({
-            postId,
-            commentId: replyId,
-            replyToUsername,
-            author: req.user?.id,
-            body,
-        });
-        post.comments++;
-        comment.replies++;
-
-        session = await mongoose.startSession();
-        session.startTransaction();
-
-        await newReply.save({ session });
-        await post.save({ session });
-        await comment.save({ session });
-
-        await session.commitTransaction();
-        session.endSession();
-
-        const response: { message: string, accessToken?: string } = { message: 'comment reply was created successfuly' }
-        if (req.newAccessToken) {
-            response.accessToken = req.newAccessToken;
-        }
-        res.status(201).json(response);
-    } catch (error) {
-        if (session !== null) {
-            await session.abortTransaction();
-            session.endSession();
-        }
-        next(error);
-    }
-}
-
 export const updateReply = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
