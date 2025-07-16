@@ -60,10 +60,11 @@ export const postCreationSchema = [
         .isString()
         .withMessage('Post title must be a string')
         .custom(async (title) => {
-            const post = await Post.findOne({ title });
-            return !post;
-        })
-        .withMessage('Post title must be unique'),
+            if(await Post.exists({ title })) {
+                throw new Error('Post title must be unique');
+            }
+            return true;
+        }),
     body('description')
         .trim()
         .notEmpty()
@@ -100,8 +101,10 @@ export const postUpdateSchema = [
         .isString()
         .withMessage('Post title must be a string')
         .custom(async (title) => {
-            const post = await Post.findOne({ title });
-            return !post;
+            if(await Post.exists({ title })) {
+                throw new Error('Post title must be unique');
+            }
+            return true;
         })
         .withMessage('Post title must be unique'),
     body('description')

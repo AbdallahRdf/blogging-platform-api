@@ -13,19 +13,21 @@ export const signupSchema = [
         .isString()
         .withMessage('Invalid username')
         .custom(async (username) => {
-            const user = await User.findOne({ username });
-            return !user;
-        })
-        .withMessage('Username is already taken'),
+            if(await User.exists({ username })) {
+                throw new Error('Username is already taken');
+            }
+            return true;
+        }),
     body('email')
         .normalizeEmail()
         .isEmail()
         .withMessage('Email address is not valid')
         .custom(async (email) => {
-            const user = await User.findOne({ email });
-            return !user;
-        })
-        .withMessage('Email address is already taken'),
+            if (await User.exists({ email })) {
+                throw new Error('Email address is already taken');
+            }
+            return true;
+        }),
     body('password')
         .trim()
         .isStrongPassword({

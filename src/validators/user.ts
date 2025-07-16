@@ -52,6 +52,10 @@ export const changeUserRoleSchema = [
         .withMessage('Invalid username'),
     body('role')
         .trim()
-        .custom((value) => Object.values(Roles).includes(value))
-        .withMessage("Invalid role")
+        .custom((value) => {
+            if(!Object.values(Roles).includes(value)){
+                throw new Error('Invalid user role');
+            }
+            return true;
+        })
 ];
