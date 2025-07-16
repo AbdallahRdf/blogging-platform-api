@@ -14,11 +14,15 @@ type RegisterUser = {
     password: string;
 }
 
+type PasswordUpdateReqBody = {
+    token: string;
+    newPassword: string;
+}
+
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
         const errors = result.array();
-
         const errorMessages: Partial<RegisterUser> = {
             fullName: getErrorMessage(errors, 'fullName'),
             username: getErrorMessage(errors, 'username'),
@@ -35,7 +39,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
         const newUser = new User({
             fullName,
-            username: `@${username}`,
+            username,
             email,
             password: hashedPassword,
         });
@@ -180,12 +184,12 @@ export const handlePasswordReset = async (req: Request, res: Response, next: Nex
 }
 
 export const validatePasswordResetToken = async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.params.token;
+    const token = req.query.token as string;
     try {
         const user = await User.findOne({ resetPasswordToken: token });
 
         if (!user) {
-            res.status(400).json({ message: "Invalid token" });
+            res.status(400).json({ message: "Invalid or expired token" });
             return;
         }
 
@@ -193,7 +197,7 @@ export const validatePasswordResetToken = async (req: Request, res: Response, ne
             user.resetPasswordExpires = null;
             user.resetPasswordToken = null;
             await user.save();
-            res.status(400).json({ message: "Invalid token" });
+            res.status(400).json({ message: "Invalid or expired token" });
             return;
         }
 
@@ -207,19 +211,24 @@ export const validatePasswordResetToken = async (req: Request, res: Response, ne
 export const updatePassword = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-        res.status(400).json({ message: result.array() });
+        const errors = result.array();
+        const reponse: Partial<PasswordUpdateReqBody> = {
+            token: getErrorMessage(errors, 'token'),
+            newPassword: getErrorMessage(errors, 'newPassword')
+        }
+        res.status(400).json(reponse);
         return;
     }
-    const { token, password } = matchedData<{token: string, password: string}>(req);
+    const { token, newPassword } = matchedData<PasswordUpdateReqBody>(req);
     try {
         const user = await User.findOne({ resetPasswordToken: token });
         
         if (!user || (typeof user.resetPasswordExpires === "number" && user.resetPasswordExpires < Date.now())) {
-            res.status(400).json({ message: "Invalid token" });
+            res.status(400).json({ token: "Invalid or expired token" });
             return
         }
 
-        const hash = await bcrypt.hash(password, 12);
+        const hash = await bcrypt.hash(newPassword, 12);
 
         user.resetPasswordToken = null;
         user.resetPasswordExpires = null;

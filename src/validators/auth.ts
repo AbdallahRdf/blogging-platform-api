@@ -69,7 +69,7 @@ export const passwordSchema = [
         .trim()
         .isString()
         .withMessage('Invalid token'),
-    body('password')
+    body('newPassword')
         .trim()
         .isStrongPassword({
             minLength: 8,

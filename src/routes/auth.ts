@@ -11,10 +11,10 @@ router.post('/login', loginSchema, login);
 
 router.post('/logout', authenticateToken, logout);
 
-router.post('/password-reset', emailSchema, handlePasswordReset);
+router.post('/forgot-password', emailSchema, handlePasswordReset);
 
-router.get('/password-reset/:token', validatePasswordResetToken);
+router.get('/reset-password/verify', validatePasswordResetToken);
 
-router.put('/password-update', passwordSchema, updatePassword);
+router.put('/reset-password', passwordSchema, updatePassword);
 
 export default router;
