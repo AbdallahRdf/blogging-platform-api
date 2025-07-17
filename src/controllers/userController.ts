@@ -15,24 +15,6 @@ type UpdatableUserFields = {
     password: string;
 }
 
-export const getUser = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = await User.findOne({ username: req.params.username }, { fullName: true, username: true, email: true, profileImage: true, role: true });
-        if (!user) {
-            res.status(404).json({ message: "User not found" });
-            return;
-        }
-
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken, user });
-            return
-        }
-        res.status(200).json(user);
-    } catch (error) {
-        next(error);
-    }
-}
-
 export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
     const { limit, cursor, sort = Sort.LATEST, role } = req.query;
 
@@ -87,6 +69,24 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
             return;
         }
         res.status(200).json({ cursor: nextCursor, users });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = await User.findOne({ username: req.params.username }, { fullName: true, username: true, email: true, profileImage: true, bio: true, role: true });
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        if (req.newAccessToken) {
+            res.status(200).json({ accessToken: req.newAccessToken, user });
+            return
+        }
+        res.status(200).json(user);
     } catch (error) {
         next(error);
     }
