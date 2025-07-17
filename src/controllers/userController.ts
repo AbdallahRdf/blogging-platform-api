@@ -86,13 +86,19 @@ export const getUser = async (req: Request, res: Response, next: NextFunction) =
             res.status(200).json({ accessToken: req.newAccessToken, user });
             return
         }
-        res.status(200).json(user);
+        res.status(200).json({ user });
     } catch (error) {
         next(error);
     }
 }
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+
+    if(!req.user || req.user.username !== req.params.username) {
+        res.status(403).json({ message: "You are not authorized to update this user" });
+        return;
+    }
+
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
