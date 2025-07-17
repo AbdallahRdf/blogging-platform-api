@@ -12,9 +12,20 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
         // No access token, so call checkRefreshToken
         return checkRefreshToken(req, res, next);
     }
+    try {
+        jwt.verify(token, process.env.JWT_SECRET_KEY as string, (error, user) => {
+            if (error) {
+                // Token verification failed, so call checkRefreshToken
+                return checkRefreshToken(req, res, next);
+            }
 
-    req.user = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as TokenPayload;
-    next();
+            // Token is valid, attach user info to request
+            req.user = user as TokenPayload;
+            next();
+        });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export default authenticateToken;

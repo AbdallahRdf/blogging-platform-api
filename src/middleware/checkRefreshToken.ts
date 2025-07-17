@@ -56,12 +56,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
             next();
         })
     } catch (error) {
-        console.log(error);
-        if (error instanceof Error) {
-            res.status(500).json({ message: `Error occured while logout process ${error.message}` });
-        } else {
-            res.status(500).json({ error: 'Unknown error while logout process' });
-        }
+        next(error);
     }
 }
 
