@@ -154,7 +154,7 @@ export const getPostsSchema = [
             return true;
         }),
 
-    query('Sort')
+    query('sort')
         .optional()
         .isIn(Object.values(Sort))
         .withMessage('Invalid Sort query param value'),

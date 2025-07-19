@@ -201,7 +201,7 @@ export const validatePasswordResetToken = async (req: Request, res: Response, ne
             return;
         }
 
-        res.sendStatus(200);
+        res.sendStatus(204);
         return;
     } catch (error) {
         next(error);

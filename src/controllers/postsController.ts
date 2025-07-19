@@ -29,12 +29,20 @@ export const getPosts = async (req: Request, res: Response, next: NextFunction) 
 
     const result = validationResult(req);
     if (!result.isEmpty()) {
-        res.status(400).json({ error: result.array() });
+        const errors = result.array();
+        const errorMessages = {
+            limit: getErrorMessage(errors, "limit"),
+            cursor: getErrorMessage(errors, "cursor"),
+            sort: getErrorMessage(errors, "sort"),
+            search: getErrorMessage(errors, "search"),
+            tags: getErrorMessage(errors, "tags"),
+        }
+        res.status(400).json({ errors: errorMessages });
         return;
     }
     const { limit, cursor, sort = Sort.LATEST, search = "", tags = "" } = matchedData<GetPostsParams>(req);
 
-    const parsedLimit = (Number(limit) + 1) || 9;
+    const parsedLimit = (Number(limit) + 1) || 10;
 
     // the sort query
     let sortQuery: Record<string, SortOrder> = {};
@@ -193,6 +201,10 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
 
     const data = matchedData<Partial<IPost>>(req);
     if (Object.keys(data).length === 0) {
+        if (req.newAccessToken) {
+            res.status(200).json({ accessToken: req.newAccessToken });
+            return;
+        }
         res.sendStatus(204);
         return;
     }
@@ -204,7 +216,14 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        if (data.title) post.title = data.title;
+        if (data.title) {
+            post.title = data.title;
+            post.slug = data.title
+                .toLowerCase()
+                .trim()
+                .replace(/[\s\W-]+/g, '-')  // Replace spaces and special characters with dashes
+                .replace(/^-+|-+$/g, ''); // Remove leading or trailing dashes
+        }
         if (data.description) post.description = data.description;
         if (data.headers) post.headers = data.headers;
         if (data.cover) post.cover = data.cover;
@@ -284,7 +303,7 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
         let likeDoc = await Like.exists({ post: postId, user: req.user?.id, comment: null });
         // if the user is doing the same reaction (liking a post he already liked or the opposite)
         if (likeDoc) {
-            res.status(200).json({ message: "Already liked" });
+            res.status(200).json({ message: "Already liked", accessToken: req.newAccessToken });
             return;
         }
 
@@ -342,7 +361,7 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
         const likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: null });
         // if the user is doing the same reaction (liking a post he already liked or the opposite)
         if (!likeDoc) {
-            res.status(200).json({ message: "Already disliked" });
+            res.status(200).json({ message: "Already disliked", accessToken: req.newAccessToken });
             return;
         }
 

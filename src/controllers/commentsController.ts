@@ -13,7 +13,7 @@ import { IComment } from "../models/comment";
 export const getComments = async (req: Request, res: Response, next: NextFunction) => {
     let { limit, cursor, sort = Sort.TOP } = req.query;
 
-    const parsedLimit = (Number(limit) + 1) || 20;
+    const parsedLimit = (Number(limit) + 1) || 21;
 
     // the sort query
     let sortQuery: Record<string, SortOrder> = {};
@@ -48,10 +48,10 @@ export const getComments = async (req: Request, res: Response, next: NextFunctio
     }
 
     try {
-        const comments = await Comment.find(query, { __v: false, updatedAt: false })
+        const comments = await Comment.find(query, { __v: false, updatedAt: false, postId: false })
             .sort(sortQuery)
             .limit(parsedLimit)
-            .populate('owner', 'username profileImage')
+            .populate('author', 'username profileImage')
             .exec();
 
         const commentsLength = comments.length;

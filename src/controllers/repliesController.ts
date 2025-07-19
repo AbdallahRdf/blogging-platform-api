@@ -13,7 +13,7 @@ export const getCommentReplies = async (req: Request, res: Response, next: NextF
     const { postId, commentId } = req.params;
 
     // is the limit query param valid
-    const parsedLimit = (Number(limit) + 1) || 20;
+    const parsedLimit = (Number(limit) + 1) || 21;
 
     // the find() query
     const query: FilterQuery<IReply> = { postId, commentId };

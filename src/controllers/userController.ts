@@ -23,7 +23,7 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
         return;
     }
 
-    const parsedLimit = (Number(limit) + 1) || 10;
+    const parsedLimit = (Number(limit) + 1) || 11;
 
     const sortQuery: Record<string, SortOrder> = {};
     switch (sort) {
@@ -94,7 +94,7 @@ export const getUser = async (req: Request, res: Response, next: NextFunction) =
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
 
-    if(!req.user || req.user.username !== req.params.username) {
+    if (!req.user || req.user.username !== req.params.username) {
         res.status(403).json({ message: "You are not authorized to update this user" });
         return;
     }
@@ -156,7 +156,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        if (![Roles.ADMIN, Roles.MODERATOR].includes(req.user?.role as Roles) || user.role !== req.user?.role) {
+        if (![Roles.ADMIN, Roles.MODERATOR].includes(req.user?.role as Roles) && user.role !== req.user?.role) {
             res.status(403).json({ message: "You are not authorized to delete this user" });
             return;
         }
@@ -180,7 +180,12 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
 export const changeUserRole = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-        res.status(400).json({ errors: result.array() });
+        const errors = result.array();
+        const errorMessages = {
+            username: getErrorMessage(errors, 'username'),
+            role: getErrorMessage(errors, 'role')
+        }
+        res.status(400).json({ errors: errorMessages });
         return;
     }
     const { username, role } = matchedData<{ username: string, role: Roles }>(req);
@@ -191,19 +196,16 @@ export const changeUserRole = async (req: Request, res: Response, next: NextFunc
             return;
         }
 
-        if (user.role === role) {
-            res.status(200).json({ message: `User already have the '${role}' as the role value` });
-            return;
+        if (user.role !== role) {
+            user.role = role;
+            await user.save();
         }
-
-        user.role = role;
-        await user.save();
 
         if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken, message: `user role was updated successfully to '${role}'` });
+            res.status(200).json({ accessToken: req.newAccessToken });
             return;
         }
-        res.status(200).json({ message: `user role was updated successfully to '${role}'` });
+        res.sendStatus(204);
     } catch (error) {
         next(error);
     }
