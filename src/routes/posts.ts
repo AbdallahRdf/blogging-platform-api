@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { createPost, deletePost, getPost, getPosts, likePost, unlikePost, updatePost } from "../controllers/postsController";
-import { createComment, deleteComment, getComments, likeComment, updateComment } from "../controllers/commentsController";
+import { createComment, deleteComment, getComments, likeComment, unlikeComment, updateComment } from "../controllers/commentsController";
 import authenticateToken from "../middleware/authenticateToken";
 import { getPostsSchema, postCreationSchema, postUpdateSchema } from "../validators/post";
 import { commentCreationSchema, commentUpdateSchema, getCommentsSchema, replyCreationSchema, replyUpdateSchema } from "../validators/comment";
-import { createReply, deleteCommentReply, getCommentReplies, likeReply, updateReply } from "../controllers/repliesController";
+import { createReply, deleteCommentReply, getCommentReplies, likeReply, unlikeReply, updateReply } from "../controllers/repliesController";
 import authorizeRoles from "../middleware/authorizeRoles";
 import { Roles } from "../enums/user.enums";
 import checkPostExists from "../middleware/checkPostExists";
 import checkCommentExists from "../middleware/checkCommentExists";
 import getLikeStatus from "../middleware/getLikeStatus";
+import checkReplyExists from "../middleware/checkReplyExists";
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.patch('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MO
 
 router.delete('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), deletePost);
 
-router.delete('/:postId/likes/', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), unlikePost);
+router.delete('/:postId/likes/', authenticateToken, unlikePost);
 
 // comments
 
@@ -45,11 +46,13 @@ router.patch('/:postId/comments/:commentId', authenticateToken, commentUpdateSch
 
 router.delete('/:postId/comments/:commentId', authenticateToken, deleteComment);
 
+router.delete('/:postId/comments/:commentId/likes', authenticateToken, checkPostExists, unlikeComment);
+
 // replies
 
 router.get('/:postId/comments/:commentId/replies', checkPostExists, checkCommentExists, getCommentReplies);
 
-router.get('/:postId/comments/:commentId/replies/:replyId/likes/status', authenticateToken, checkPostExists, checkCommentExists, getLikeStatus);
+router.get('/:postId/comments/:commentId/replies/:replyId/likes/status', authenticateToken, checkPostExists, checkCommentExists, checkReplyExists, getLikeStatus);
 
 router.post('/:postId/comments/:commentId/replies', authenticateToken, replyCreationSchema, createReply);
 
@@ -58,5 +61,7 @@ router.post('/:postId/comments/:commentId/replies/:replyId/likes', authenticateT
 router.patch('/:postId/comments/:commentId/replies/:replyId', authenticateToken, replyUpdateSchema, checkPostExists, checkCommentExists, updateReply);
 
 router.delete('/:postId/comments/:commentId/replies/:replyId', authenticateToken, deleteCommentReply);
+
+router.delete('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, checkPostExists, checkCommentExists, unlikeReply);
 
 export default router;

@@ -8,7 +8,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
     const refreshToken = req.cookies.refreshToken as string;
 
     if (!refreshToken) {
-        res.status(401).json({ message: 'Unauthorized, please log in.' });
+        res.status(401).json({ message: 'Unauthorized' });
         return;
     }
 
@@ -21,7 +21,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'none'
             });
-            res.status(401).json({ message: 'Unauthorized, please log in.' });
+            res.status(401).json({ message: 'Unauthorized' });
             return;
         }
 
@@ -37,7 +37,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: 'none'
                 });
-                res.status(401).json({ message: 'Unauthorized, please log in.' });
+                res.status(401).json({ message: 'Unauthorized' });
                 return;
             }
 
@@ -50,9 +50,17 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
                 role: foundUser.role
             }
 
-            req.newAccessToken = generateAccessToken(theUser); // Attach the new access token to the request
+            const newAccessToken = generateAccessToken(theUser); 
             req.user = theUser; // Attach the user info to the request
 
+            // Patch res.json here
+            const originalJson = res.json;
+            res.json = function (body: any) {
+                if (typeof body === 'object' && body !== null) {
+                    body.accessToken = newAccessToken;
+                }
+                return originalJson.call(this, body);
+            };
             next();
         })
     } catch (error) {

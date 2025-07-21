@@ -1,17 +1,17 @@
 import mongoose, { Schema, SchemaTypes } from "mongoose";
 import { PostBlockType } from "../enums/post.enums";
 
-export interface IPostHeader { 
-    id: string; 
-    type: string; 
-    value: string 
+export interface IPostHeader {
+    id: string;
+    type: string;
+    value: string
 }
 
-export interface IPostContent { 
-    type: PostBlockType; 
-    value: string; 
-    language?: string 
-} 
+export interface IPostContent {
+    type: PostBlockType;
+    value: string;
+    language?: string
+}
 
 export type PostHeaders = Array<IPostHeader>;
 
@@ -78,7 +78,6 @@ const postSchema = new Schema<IPost>({
     slug: {
         type: SchemaTypes.String,
         required: true,
-        unique: true,
         lowercase: true,
         trim: true
     },
@@ -116,6 +115,6 @@ const postSchema = new Schema<IPost>({
     })
 
 postSchema.index({ tags: 1 });
-postSchema.index({ slug: 1 });
+postSchema.index({ slug: 1 }, { unique: true });
 
 export default mongoose.model<IPost>('Post', postSchema);

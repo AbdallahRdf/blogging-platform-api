@@ -167,12 +167,8 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             tags
         });
         await post.save();
-
-        const response: { message: string, accessToken?: string } = { message: 'Post created successfully.' }
-        if (req.newAccessToken) {
-            response.accessToken = req.newAccessToken;
-        }
-        res.status(201).json(response);
+        
+        res.status(201).json({ message: "Created" });
     } catch (error) {
         next(error);
     }
@@ -201,11 +197,7 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
 
     const data = matchedData<Partial<IPost>>(req);
     if (Object.keys(data).length === 0) {
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Updated" });
         return;
     }
 
@@ -232,11 +224,7 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
 
         await post.save();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Updated" });
     } catch (error) {
         next(error);
     }
@@ -267,11 +255,7 @@ export const deletePost = async (req: Request, res: Response, next: NextFunction
         await session.commitTransaction();
         session.endSession();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Deleted" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();
@@ -303,7 +287,7 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
         let likeDoc = await Like.exists({ post: postId, user: req.user?.id, comment: null });
         // if the user is doing the same reaction (liking a post he already liked or the opposite)
         if (likeDoc) {
-            res.status(200).json({ message: "Already liked", accessToken: req.newAccessToken });
+            res.status(200).json({ message: "Success" });
             return;
         }
 
@@ -324,11 +308,7 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
         await session.commitTransaction();
         session.endSession();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Success" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();
@@ -361,7 +341,7 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
         const likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: null });
         // if the user is doing the same reaction (liking a post he already liked or the opposite)
         if (!likeDoc) {
-            res.status(200).json({ message: "Already disliked", accessToken: req.newAccessToken });
+            res.status(200).json({ message: "Success" });
             return;
         }
 
@@ -375,11 +355,7 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
         await session.commitTransaction();
         session.endSession();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Success" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();

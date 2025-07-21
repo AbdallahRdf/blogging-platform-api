@@ -22,7 +22,6 @@ const userSchema = new Schema<IUser>({
     username: {
         type: SchemaTypes.String,
         required: true,
-        unique: true
     },
     email: {
         type: SchemaTypes.String,
@@ -59,6 +58,6 @@ const userSchema = new Schema<IUser>({
     timestamps: true,
 });
 
-userSchema.index({ username: 1 });
+userSchema.index({ username: 1 }, { unique: true });
 
 export default mongoose.model<IUser>('User', userSchema);

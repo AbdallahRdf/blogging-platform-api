@@ -1,0 +1,2147 @@
+openapi: 3.0.4
+info:
+  title: Blog API
+  version: 2.0.0
+  description: "API documentation for personal blogging platform"
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+tags:
+  - name: Auth
+    description: Authentication operations
+  - name: Users
+    description: Operations about users
+  - name: Posts
+    description: Operations about posts
+  - name: Comments
+    description: Operations about comments
+  - name: Replies
+    description: Operations about replies to comments
+
+paths:
+  /auth/register:
+    post:
+      operationId: registerUser
+      summary: Register a new user
+      tags: [Auth]
+      description: >
+        Register a new user using: fullName, a unique username, email, and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  description: The full name of the user
+                username:
+                  type: string
+                  description: Unique username for the user
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$'
+                  description: User's password
+              required:
+                - fullName
+                - username
+                - email
+                - password
+              example:
+                fullName: "John Doe"
+                username: "johndoe"
+                email: "johndoe@example.com"
+                password: "Secure_Password_123"
+      responses:
+        201:
+          $ref: "#/components/responses/JWT"
+        400:
+          description: Bad request, validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      fullName:
+                        type: string
+                        description: Error message for fullName validation
+                      username:
+                        type: string
+                        description: Error message for username validation
+                      email:
+                        type: string
+                        description: Error message for email validation
+                      password:
+                        type: string
+                        description: Error message for password validation
+                        example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      summary: Login an existing user
+      tags: [Auth]
+      description: >
+        Login a user using email and password. Returns JWT access token and refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+              required:
+                - email
+                - password
+              example:
+                email: "johndoe@example.com"
+                password: "Secure_Password_123"
+      responses:
+        200:
+          $ref: "#/components/responses/JWT"
+        400:
+          description: Bad request, validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    description: Error message for login failure
+                    example: "Invalid credentials"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      summary: Logout a user
+      tags: [Auth]
+      description: >
+        Logout a user by clearing the refresh token cookie.
+      responses:
+        204:
+          description: Successfully logged out
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /auth/forgot-password:
+    post:
+      operationId: requestPasswordReset
+      summary: Request password reset
+      tags: [Auth]
+      description: >
+        Request a password reset by providing the user's email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+              required:
+                - email
+              example:
+                email: "johndoe@example.com"
+      responses:
+        204:
+          description: Password reset email sent successfully
+        400:
+          description: Bad request, validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message for invalid email
+                    example: "Invalid email address"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /auth/reset-password/verify:
+    get:
+      operationId: verifyPasswordResetToken
+      summary: Verify password reset token
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Password reset token sent to the user's email
+      responses:
+        204:
+          description: Token is valid, ready for password reset
+        400:
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message for invalid token
+                    example: "Invalid or expired token"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /auth/reset-password:
+    put:
+      operationId: resetPassword
+      summary: Reset user password
+      tags: [Auth]
+      description: >
+        Reset the user's password using a valid token and new password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: Password reset token sent to the user's email
+                newPassword:
+                  type: string
+                  format: password
+                  description: New password for the user
+              required:
+                - token
+                - newPassword
+              example:
+                token: "abc123xyz456"
+                newPassword: "New_Secure_Password_123"
+      responses:
+        204:
+          description: Password reset successful
+        400:
+          description: Bad request, validation error or invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Error message for invalid token
+                    example: "Invalid or expired token"
+                  newPassword:
+                    type: string
+                    description: Error message for new password validation
+                    example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /users:
+    get:
+      security:
+        - JWTAuth: []
+      operationId: getUsers
+      summary: Get a list of users
+      description: Get a paginated list of users.  If the access token was refreshed during authentication, a new token will also be included.
+      tags: [Users]
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          description: Max number of users to return
+
+        - $ref: "#/components/parameters/CursorParam"
+
+        - $ref: "#/components/parameters/sortParam"
+
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [admin, moderator, user]
+          description: Filter users by role
+          required: true
+
+      responses:
+        200:
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Returned only if a new access token was generated
+                    nullable: true
+                  cursor:
+                    type: string
+                    description: Cursor for pagination
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          description: Unique identifier for the user
+                        fullName:
+                          type: string
+                          description: Full name of the user
+                        username:
+                          type: string
+                          description: Unique username of the user
+                        profileImage:
+                          type: string
+                          description: URL of the user's profile image
+              examples:
+                withAccessToken:
+                  summary: Example with access token
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR....
+                    cursor: 66e038559b9bb0ffc46836cf
+                    users:
+                      - fullName: "John Doe"
+                        username: "johndoe"
+                        profileImage: "https://cdn.example.com/images/johndoe.png"
+                      - fullName: "Jane Smith"
+                        username: "janesmith"
+                        profileImage: "https://cdn.example.com/images/janesmith.png"
+                withoutAccessToken:
+                  summary: Example without access token
+                  value:
+                    cursor: 66e038559b9bb0ffc46836cf
+                    users:
+                      - fullName: "John Doe"
+                        username: "johndoe"
+                        profileImage: "https://cdn.example.com/images/johndoe.png"
+                      - fullName: "Jane Smith"
+                        username: "janesmith"
+                        profileImage: "https://cdn.example.com/images/janesmith.png"
+        400:
+          description: Bad Request, Invalid query parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message for invalid query parameter
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /users/{username}:
+    get:
+      security:
+        - JWTAuth: []
+      operationId: getUserByUsername
+      description: |
+        Retrieves detailed information about the user.
+      tags: [Users]
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Unique username of the user to retrieve
+      responses:
+        200:
+          description: A single user Object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT access token for the user, returned only if a new access token was generated
+                    nullable: true
+                  user:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        description: Unique identifier for the user
+                      fullName:
+                        type: string
+                        description: Full name of the user
+                      username:
+                        type: string
+                        description: Unique username of the user
+                      email:
+                        type: string
+                        format: email
+                        description: Email address of the user
+                      profileImage:
+                        type: string
+                        description: URL of the user's profile image
+                      bio:
+                        type: string
+                        description: Short biography of the user
+                      role:
+                        type: string
+                        enum: [admin, moderator, user]
+                        description: Role of the user in the system
+              examples:
+                withAccessToken:
+                  summary: Example with access token
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR...
+                    user:
+                      _id: 64a2234cf02eab9f9f813c9d
+                      fullName: "John Doe"
+                      username: "johndoe"
+                      email: "johndoe@example.com"
+                      profileImage: "https://cdn.example.com/images/johndoe.png"
+                      bio: "Software developer and tech enthusiast"
+                      role: "user"
+                withoutAccessToken:
+                  summary: Example without access token
+                  value:
+                    user:
+                      _id: 64a2234cf02eab9f9f813c9d
+                      fullName: "John Doe"
+                      username: "johndoe"
+                      email: "johndoe@example.com"
+                      profileImage: "https://cdn.example.com/images/johndoe.png"
+                      bio: "Software developer and tech enthusiast"
+                      role: "user"
+        404:
+          $ref: "#/components/responses/UserNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    patch:
+      security:
+        - JWTAuth: []
+      operationId: updateUserByUsername
+      description: >
+        Update a user's profile information by their username. 
+        Only the user themselves can update their account. 
+        Fields that can be updated include full name, username, profile image, bio, and password. 
+        If the user's access token has expired, a new one will be generated and returned.
+      summary: Update a user by their username
+      tags: [Users]
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Unique username of the user to retrieve
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  description: The full name of the user
+                username:
+                  type: string
+                  description: Unique username for the user
+                profileImage:
+                  type: string
+                  description: URL of the user's profile image
+                bio:
+                  type: string
+                  description: Short biography of the user
+                password:
+                  type: string
+                  format: password
+                  description: User's new password
+              example:
+                fullName: "John Doe"
+                profileImage: "https://cdn.example.com/images/johndoe.png"
+                bio: "Software developer and cybersecurity enthusiast"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Updated"
+        400:
+          description: Bad request, validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      fullName:
+                        type: string
+                        description: Error message for fullName validation
+                        nullable: true
+                      username:
+                        type: string
+                        description: Error message for username validation
+                        nullable: true
+                      profileImage:
+                        type: string
+                        description: Error message for profileImage validation
+                        nullable: true
+                      bio:
+                        type: string
+                        description: Error message for bio validation
+                        nullable: true
+                      password:
+                        type: string
+                        description: Error message for password validation
+                        nullable: true
+                        example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/UserNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      security:
+        - JWTAuth: []
+      operationId: deleteUserByUsername
+      summary: Delete a user by their username
+      description: >
+        Delete a user's account, only a user who owns the account or has a `admin` or `moderator` role can delete the account.
+      tags: [Users]
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Unique username of the user to delete
+      responses:
+        200:
+          $ref: "#/components/responses/Deleted"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/UserNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /users/{username}/roles:
+    post:
+      security:
+        - JWTAuth: []
+      operationId: assignUserRole
+      summary: Assign a role to a user
+      tags: [Users] 
+      description: >
+        Assign a role to a user by their username. Only accessible by admin. 
+        If the access token was refreshed during authentication, a new token will be included.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Unique username of the user to assign a role to
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [admin, moderator, user]
+                  description: Role to assign to the user
+              required:
+                - role
+              example:
+                role: "admin"
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                        nullable: true
+                        example: "Username must not be empty"
+                      role:
+                        type: string
+                        nullable: true
+                        example: "Invalid role"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/UserNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"    
+
+  /posts:
+    get:
+      operationId: getPosts
+      summary: Get a list of posts
+      description:  >
+        Retrieve a paginated list of blog posts. You can control the number of posts returned using the `limit` parameter, 
+        navigate through pages using the `cursor`, sort the results using the `sort` parameter, 
+        search by keywords using `search`, and filter posts by tags using a comma-separated list in the `tags` parameter.
+      tags: [Posts]
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 9
+          description: Max number of posts to return
+
+        - $ref: "#/components/parameters/CursorParam"
+
+        - $ref: "#/components/parameters/sortParam"
+
+        - in: query
+          name: search
+          schema:
+            type: string
+            default: ""
+          description: Search term to filter posts by title or description
+
+        - in: query
+          name: tags
+          schema:
+            type: string
+          description: Comma-separated list of tags to filter posts
+          example: "JavaScript,Node.js,API"
+
+      responses:
+        200:
+          description: A list of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cursor:
+                    type: string
+                    description: Cursor for pagination
+                  posts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          description: Unique identifier for the post
+                        title:
+                          type: string
+                          description: Title of the post
+                        slug:
+                          type: string
+                          description: Slugified title, used for URLs
+                        cover:
+                          type: string
+                          description: URL of the cover image
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                          description: Tags associated with the post
+                        likes:
+                          type: integer
+                          default: 0
+                          description: Number of likes on the post
+                        comments:
+                          type: integer
+                          default: 0
+                          description: Number of comments on the post
+                        createdAt:
+                          type: string
+                          format: date-time
+                          description: Timestamp of post creation
+                      
+              example:
+                cursor: 66e038559b9bb0ffc46836cf
+                posts:
+                  - _id: 64f0341f3df05e12a3c3a401
+                    title: Understanding JavaScript Closures
+                    slug: understanding-javascript-closures
+                    cover: https://cdn.example.com/images/js-closures.png
+                    tags: 
+                      - JavaScript
+                      - Closures
+                      - Tutorial
+                    likes: 0
+                    comments: 0
+                    createdAt: 2024-11-08T17:36:14.314Z
+        400:
+          description: Bad Request, Invalid query parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: string
+                    description: Error message for invalid limit parameter
+                    example: "Limit must be a positive integer"
+                    nullable: true
+                  cursor:
+                    type: string
+                    description: Error message for invalid cursor parameter
+                    example: "Invalid cursor format"
+                    nullable: true
+                  sort:
+                    type: string
+                    description: Error message for invalid sort parameter
+                    example: "Invalid sort value, must be one of: latest, oldest, top"
+                    nullable: true
+                  search:
+                    type: string
+                    description: Error message for invalid search parameter 
+                    example: "Search term must be a string"
+                    nullable: true
+                  tags:
+                    type: string
+                    description: Error message for invalid tags parameter
+                    example: "Tags must be a comma-separated list of strings"
+                    nullable: true
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    post:
+      operationId: createPost
+      summary: Create a new post
+      description: >
+        Allows an authenticated user with admin or moderator privileges to create a new blog post. 
+        Requires title, description, headers, cover image URL, content, and a list of tags.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - headers
+                - cover
+                - content
+                - tags
+              properties:
+                title:
+                  type: string
+                  description: Title of the post
+                description:
+                  type: string
+                  description: Short summary or subtitle of the post
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PostHeader"
+                cover:
+                  type: string
+                  description: URL of the cover image
+                content:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PostContent"
+                tags:
+                  type: array
+                  description: List of tags associated with the post
+                  items:
+                    type: string
+            example:
+              title: "Node.js Streams Explained"
+              description: "An introduction to readable and writable streams"
+              headers:
+                  - id: 5a52da70-507c-497d-9bd7-968be323c912
+                    type: H2
+                    value: Introduction
+                  - id: 5a52da70-507c-497d-9bd7-968be32dc912
+                    type: H2
+                    value: What are Streams?
+              cover: "https://cdn.example.com/images/node-streams.png"
+              content:
+                - type: Image
+                  value: https://cdn.example.com/images/js-closures.png
+                - type: Editor
+                  value: "Closures are a fundamental concept..."
+                - type: Code Snippet
+                  value: "function outer() { ... }"
+                  language: "javascript"
+              tags: [JavaScript, Closures, Tutorial]
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        400:
+          description: Bad Request – Invalid input fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      headers:
+                        type: string
+                        nullable: true
+                      cover:
+                        type: string
+                        nullable: true
+                      content:
+                        type: string
+                        nullable: true
+                      tags:
+                        type: string
+                        nullable: true
+                example:
+                  message:
+                    title: "Title is required"
+                    description: null
+                    headers: null
+                    cover: null
+                    content: null
+                    tags: "Tags must be an array of strings"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{slug}:
+    get:
+      operationId: getPostBySlug
+      summary: Get a post by its slug
+      description: >
+        Retrieve a detailed blog post using its unique slug. The response includes post metadata, content blocks 
+        (such as headers, code snippets, and images), author information, tags, and statistics like likes and comments.
+        This endpoint is useful for rendering full blog post pages based on a readable and SEO-friendly URL.
+      tags: [Posts]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Slug of the post to retrieve
+
+      responses:
+        200:
+          description: A single post object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                    description: Unique identifier for the post
+                  title:
+                    type: string
+                    description: Title of the post
+                  slug:
+                    type: string
+                    description: Slugified title, used for URLs
+                  description:
+                    type: string
+                    description: Short description of the post
+                  headers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PostHeader"
+                  cover:
+                    type: string
+                    description: URL of the cover image
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PostContent"
+                  author:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        description: Unique identifier for the author
+                      fullName:
+                        type: string
+                        description: Full name of the author
+                      username:
+                        type: string
+                        description: Username of the author
+                      profileImage:
+                        type: string
+                        description: URL of the author's profile image
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                    description: Tags associated with the post
+                  likes:
+                    type: integer
+                    description: Number of likes on the post
+                  comments:
+                    type: integer
+                    description: Number of comments on the post
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Timestamp of post creation
+              example:
+                _id: 64f0341f3df05e12a3c3a401
+                title: Understanding JavaScript Closures
+                slug: understanding-javascript-closures
+                description: A deep dive into closures in JavaScript
+                headers:
+                  - id: 5a52da70-507c-497d-9bd7-968be323c912
+                    type: H2
+                    value: Introduction
+                  - id: 5a52da70-507c-497d-9bd7-968be32dc912
+                    type: H2
+                    value: Second header
+                cover: https://cdn.example.com/images/js-closures.png
+                content:
+                  - type: Image
+                    value: https://cdn.example.com/images/js-closures.png
+                  - type: Editor
+                    value: "Closures are a fundamental concept..."
+                  - type: Code Snippet
+                    value: "function outer() { ... }"
+                    language: "javascript"
+                author: 64a2234cf02eab9f9f813c9d
+                tags: [JavaScript, Closures, Tutorial]
+                likes: 42
+                comments: 5
+                createdAt: 2024-05-10T10:00:00.000Z
+                updatedAt: 2024-05-11T14:20:00.000Z
+        400: 
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message for invalid slug
+                    example: "Invalid post slug"
+        404:
+          $ref: "#/components/responses/PostNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/likes/status:
+    get:
+      operationId: getPostLikeStatus
+      summary: Get a post's like status
+      description: >
+        Check whether the authenticated user has liked a specific post. 
+        The response includes a boolean flag indicating the like status. 
+        If the access token was refreshed during authentication, a new token will also be included.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+      responses:
+        200:
+          $ref: "#/components/responses/LikeStatusResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/likes:
+    post:
+      operationId: likePost
+      summary: Like a post
+      description: >
+        Allows an authenticated user to like a blog post. If the post has already been liked by the same user, 
+        the API will respond with a message indicating the post was already liked.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          description: Bad Request – Invalid post ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid post id
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      operationId: unlikePost
+      summary: Remove a like from a post
+      description: >
+        Removes a like from a post by the authenticated user.  
+        If the user hasn't liked the post, a 200 response is returned with a message.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          description: Invalid post ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid post id"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}:
+    patch:
+      operationId: updatePost
+      summary: Update a post
+      description: >
+        Update an existing post. Only users with the `ADMIN` or `MODERATOR` role can access this route.
+        If no valid fields are provided, it will return 204 No Content. If a token is refreshed, it returns a new access token.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PostHeader"
+                cover:
+                  type: string
+                  format: uri
+                content:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PostContent"
+                tags:
+                  type: array
+                  items:
+                    type: string
+              example:
+                title: "Updated Post Title"
+                description: "Updated description of the post"
+                headers:
+                  - id: "h1"
+                    type: "H1"
+                    value: "Intro"
+                cover: "https://cdn.example.com/newcover.png"
+                content:
+                  - type: "Editor"
+                    value: "Updated content here..."
+                tags: ["webdev", "typescript"]
+      responses:
+        200:
+          $ref: "#/components/responses/Updated"
+        400:
+          description: Invalid request body or post ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      nullable: true
+                example:
+                  message:
+                    title: "Title must be at least 5 characters"
+                    description: null
+                    cover: "Cover must be a valid URL"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/PostNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      operationId: deletePost
+      summary: Delete a post
+      description: >
+        Deletes a post and all its associated comments and likes.  
+        Only `ADMIN` or `MODERATOR` roles can perform this operation.
+      tags: [Posts]
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+      responses:
+        200:
+          $ref: "#/components/responses/Deleted"
+        400:
+          description: Invalid post ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid post id"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/PostNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments:
+    get:
+      operationId: getPostComments
+      summary: Get comments for a post
+      description: |
+        Retrieve a paginated list of comments for a post using optional cursor-based pagination.
+        Supports sorting by latest, oldest, or top (most liked).  
+        Returns a list of comments along with a cursor for the next page.
+      tags: [Comments]
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          required: false
+          description: Number of comments to return.
+
+        - $ref: "#/components/parameters/CursorParam"
+
+        - $ref: "#/components/parameters/sortParam"
+
+      responses:
+        200:
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cursor:
+                    type: string
+                    nullable: true
+                    description: Cursor to the next page (null if no more)
+                    example: "64f1a8e9d3c9f3c6813cf28a"
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "64f1a8e9d3c9f3c6813cf28a"
+                        body:
+                          type: string
+                          example: "This is a great post!"
+                        likes:
+                          type: integer
+                          example: 5
+                        replies: 
+                          type: integer
+                          example: 3
+                        createdAt:
+                          type: string
+                          format: date-time
+                        author:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: 672e4c0ee5a3844feb20db18
+                            username:
+                              type: string
+                              example: "abdallah_dev"
+                            profileImage:
+                              type: string
+                              example: "https://cdn.example.com/images/johndoe.png"
+                              nullable: true
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples: 
+                InvalidPostId:
+                  summary: Invalid post Id
+                  value: 
+                    message: "Post id is not valid!"
+                InvalidCursor:
+                  summary: Invalid cursor
+                  value: 
+                    message: "Cursor does not exist"
+
+        404:
+          $ref: "#/components/responses/PostNotFound"
+
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    post:
+      summary: Create a comment on a post
+      operationId: createComment
+      description: Allows an authenticated user to add a comment to a post.
+      tags: [Comments]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  example: "This is a great post!"
+
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+
+        400:
+          description: Invalid input (e.g. missing or invalid comment body)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      postId:
+                        type: string
+                        nullable: true
+                        description: Error message about the post id parameter.
+                        example: Invalid post id
+                      body:
+                        type: string
+                        nullable: true
+                        description: The comment's content
+                        example: Comment must not be empty
+
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+        404:
+          $ref: "#/components/responses/PostNotFound"
+
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}:
+    patch:
+      tags: [Comments]
+      summary: Update a comment
+      description: Updates the body of a specific comment. Only the comment's author is allowed to perform this action.
+      operationId: updateComment
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  example: Updated comment content
+      responses:
+        200:
+          $ref: "#/components/responses/Updated"
+        400:
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      postId:
+                        type: string
+                        nullable: true
+                        description: Error message about the post id parameter.
+                        example: Invalid post id
+                      commentId:
+                        type: string
+                        nullable: true
+                        description: Error message about the comment id parameter.
+                        example: Invalid comment id
+                      body:
+                        type: string
+                        nullable: true
+                        description: The comment's content
+                        example: Comment must not be empty
+
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+        500:
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      summary: Delete a comment
+      operationId: deleteComment
+      description: |
+        Deletes a comment if the user is the comment's author or has an admin/moderator role.
+        Also deletes all associated replies and likes.
+
+      tags: [Comments]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+
+        - $ref: "#/components/parameters/CommentIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Deleted"
+
+        400:
+          description: Invalid postId or commentId
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid comment id"
+
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+        403:
+          $ref: "#/components/responses/Forbidden"
+
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}/likes:
+    post:
+      tags: [Comments]
+      summary: Like a comment
+      description: Adds a like to a specific comment by the authenticated user. If already liked, does nothing.
+      operationId: likeComment
+      security:
+        - JWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          description: Invalid comment ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Comment id is not valid!
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+        500:
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      summary: Unlike a comment
+      operationId: unlikeComment
+      description: |
+        Removes the authenticated user's like from a specific comment.
+        If the like doesn't exist, the operation is still considered successful (idempotent).
+
+      tags: [Comments]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+
+        400:
+          description: Invalid post or comment ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Comment id is not valid!"
+
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}/likes/status:
+    get:
+      summary: Check if the current user liked a specific comment
+      operationId: getCommentLikeStatus
+      description: |
+        Returns whether the authenticated user has liked a specific comment on a post.
+        Requires authentication.
+      tags: [Comments]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/LikeStatusResponse"
+        400:
+          description: Invalid post or comment ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post id is not valid!"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}/replies:
+    get:
+      summary: Get replies to a comment
+      operationId: getCommentReplies
+      description: |
+        Fetches replies for a specific comment using cursor-based pagination.
+        Replies are returned from oldest to newest. If a `cursor` is provided, it will fetch replies starting from that ID.
+
+      tags: [Replies]
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Max number of replies to return (defaults to 20, max 100)
+
+        - $ref: "#/components/parameters/CursorParam"
+
+      responses:
+        200:
+          description: List of replies with optional pagination cursor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cursor:
+                    type: string
+                    nullable: true
+                    description: The ObjectId of the next reply, if more results exist
+                    example: "66aee40d1540c8321183c5f0"
+                  replies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "66aee40d1540c832e183c5f4"
+                        replyToUsername:
+                          type: string
+                        body:
+                          type: string
+                        likes:
+                          type: integer
+                        author:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "66aee40d1540c8321183c5f03"
+                            username:
+                              type: string
+                            profileImage:
+                              type: string
+                              nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+        400:
+          description: Bad request, invalid post id, comment id or cursor parameter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "cursor is not valid"
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    post:
+      summary: Create a reply to a comment
+      operationId: createReply
+      description: |
+        Creates a reply on a comment within a post. Only authenticated users can reply.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+                - replyToUsername
+              properties:
+                body:
+                  type: string
+                  description: The content of the reply
+                  example: "I totally agree with your comment!"
+                replyToUsername:
+                  type: string
+                  description: Username of the person being replied to
+                  example: "ahmed_dev"
+
+      responses:
+        201:
+          $ref: "#/components/responses/Created"
+        400:
+          description: Validation errors in the request body or path
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      postId:
+                        type: string
+                        nullable: true
+                        example: "Invalid postId"
+                      commentId:
+                        type: string
+                        nullable: true
+                        example: "Invalid commentId"
+                      replyToUsername:
+                        type: string
+                        nullable: true
+                        example: "Username of the user being replied to is required"
+                      body:
+                        type: string
+                        nullable: true
+                        example: "Body must not be empty"
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: "#/components/responses/PostOrCommentNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}/replies/{replyId}:
+    patch:
+      summary: Update a reply
+      operationId: updateReply
+      description: |
+        Updates the body of a specific reply. Only the reply's author can perform this action.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/ReplyIdParam"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  example: "Updated reply content."
+
+      responses:
+        200:
+          $ref: "#/components/responses/Updated"
+        400:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      postId:
+                        type: string
+                        nullable: true
+                        example: "Invalid postId"
+                      commentId:
+                        type: string
+                        nullable: true
+                        example: "Invalid commentId"
+                      replyId:
+                        type: string
+                        nullable: true
+                        example: "Invalid replyId"
+                      body:
+                        type: string
+                        nullable: true
+                        example: "Body must not be empty"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      summary: Delete a reply
+      operationId: deleteReply
+      description: |
+        Deletes a specific reply to a comment.
+        Only the reply's author, an admin, or a moderator can perform this operation.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/ReplyIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Deleted"
+        400:
+          $ref: "#/components/responses/InvalidResourceId"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+        
+  /posts/{postId}/comments/{commentId}/replies/{replyId}/likes:
+    post:
+      summary: Like a reply
+      operationId: likeReply
+      description: |
+        Likes a specific reply within a comment. If already liked by the user, the server responds with a success message but takes no further action.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/ReplyIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          $ref: "#/components/responses/InvalidResourceId"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      summary: Unlike a reply
+      operationId: unlikeReply
+      description: |
+        Removes the like from a specific reply made by the authenticated user.
+        Does nothing if the user hasn’t liked the reply before.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/ReplyIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        400:
+          $ref: "#/components/responses/InvalidResourceId"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{postId}/comments/{commentId}/replies/{replyId}/likes/status:
+    get:
+      summary: Get like status for a reply
+      operationId: getLikeStatus
+      description: |
+        Checks whether the authenticated user has liked a specific reply.
+      tags: [Replies]
+      security:
+        - JWTAuth: []
+
+      parameters:
+        - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CommentIdParam"
+        -  $ref: "#/components/parameters/ReplyIdParam"
+
+      responses:
+        200:
+          $ref: "#/components/responses/LikeStatusResponse"
+        400:
+          $ref: "#/components/responses/InvalidResourceId"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        500:
+          $ref: "#/components/responses/ServerError"
+
+components:
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Use the JWT token obtained from login or registration to access protected routes.
+
+  parameters:
+    PostIdParam:
+      in: path
+      name: postId
+      required: true
+      schema:
+        type: string
+        format: objectId
+        example: "64f0341f3df05e12a3c3a401"
+      description: ID of the post
+    CommentIdParam:
+      in: path
+      name: commentId
+      required: true
+      schema:
+        type: string
+        format: objectId
+        example: "64f0341f3df05212c3c3b402"
+      description: ID of the comment
+    ReplyIdParam:
+      in: path
+      name: replyId
+      required: true
+      schema:
+        type: string
+        example: "64f0341f3df05212c3c3b42e"
+      description: ID of the reply
+    CursorParam:
+      in: query
+      name: cursor
+      schema:
+        type: string
+        nullable: true
+        example: 64f0341f3df05e12a3c3a401
+      description: Cursor to the next page (null if no more)
+    sortParam:
+      in: query
+      name: sort
+      schema:
+        type: string
+        enum: [latest, oldest, top]
+        default: latest
+      description: Sort order
+
+  responses:
+    JWT:
+      description: Successful operation
+      headers:
+        Set-Cookie:
+          description: HTTP-only cookie containing the refresh token.
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              accessToken:
+                type: string
+                description: JWT access token for the user
+            example:
+              accessToken: eyJhbGciOiJIUzI1NiIsInR...
+    OnlyAccessToken:
+      description: Success, if the user's access token has expired a new one is generated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              accessToken:
+                type: string
+                description: JWT access token for the user
+                example: "eyJhbGciOiJIUzI1NiIsInR..."
+    Success:
+      description: Success, if the user's access token has expired a new one is generated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Response message
+                example: Success
+              accessToken:
+                type: string
+                nullable: true
+                description: JWT access token for the user
+                example: "eyJhbGciOiJIUzI1NiIsInR..."
+    Created:
+      description: Created, if the user's access token has expired a new one is generated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Response message
+                example: Created
+              accessToken:
+                type: string
+                nullable: true
+                description: JWT access token for the user
+                example: "eyJhbGciOiJIUzI1NiIsInR..."
+    Updated:
+      description: Updated, if the user's access token has expired a new one is generated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Response message
+                example: Updated
+              accessToken:
+                type: string
+                nullable: true
+                description: JWT access token for the user
+                example: "eyJhbGciOiJIUzI1NiIsInR..."
+    Deleted:
+      description: Deleted, if the user's access token has expired a new one is generated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Response message
+                example: Deleted
+              accessToken:
+                type: string
+                nullable: true
+                description: JWT access token for the user
+                example: "eyJhbGciOiJIUzI1NiIsInR..."
+    LikeStatusResponse:
+      description: Like status retrieved successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              liked:
+                type: boolean
+                description: Indicates if the user liked
+              accessToken:
+                type: string
+                description: New access token if the old one was refreshed
+                nullable: true
+          examples:
+            liked:
+              summary: Liked, no new token
+              value:
+                liked: true
+            likedWithToken:
+              summary: Liked, token refreshed
+              value:
+                liked: true
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            notLiked:
+              summary: Not liked
+              value:
+                liked: false
+    InvalidResourceId:
+      description: Bad request due to invalid post, comment, or reply ID.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Invalid comment reply id"
+    UserNotFound:
+      description: User not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message for user not found
+                example: "User not found"
+    PostNotFound:
+      description: Post not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message for post not found
+                example: "Post not found"
+    PostOrCommentNotFound:
+      description: Post or comment not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Comment not found"
+    PostOrCommentOrReplyNotFound:
+      description: Post or comment or reply not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Post not found"
+    Unauthorized:
+      description: Unauthorized – user not authenticated or token is invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Unauthorized
+    Forbidden:
+      description: Forbidden – user lacks permission (read description to know what roles are authorized)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Forbidden
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message
+
+  schemas:
+    PostHeader:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the header block
+        type:
+          type: string
+          enum: [H2, H3]
+          description: The type of header (H2 or H3)
+        value:
+          type: string
+          description: The text of the header
+
+    PostContent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [Image, Code Snippet, Code Output, Editor]
+          description: The block type
+        value:
+          type: string
+          description: The actual content or reference
+        language:
+          type: string
+          description: Language used (only for code snippets)
+          nullable: true

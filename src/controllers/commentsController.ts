@@ -9,6 +9,7 @@ import { matchedData, validationResult } from "express-validator";
 import { Roles } from "../enums/user.enums";
 import { Sort } from "../enums/post.enums";
 import { IComment } from "../models/comment";
+import { getErrorMessage } from "../utils/helpers";
 
 export const getComments = async (req: Request, res: Response, next: NextFunction) => {
     let { limit, cursor, sort = Sort.TOP } = req.query;
@@ -73,7 +74,12 @@ export const getComments = async (req: Request, res: Response, next: NextFunctio
 export const createComment = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-        res.status(400).json({ errors: result.array() });
+        const errors = result.array();
+        const errorMessages = {
+            postId: getErrorMessage(errors, "postId"),
+            body: getErrorMessage(errors, "body")
+        }
+        res.status(400).json({ errors: errorMessages });
         return;
     }
     const { postId, body } = matchedData<{ postId: ObjectId, body: string }>(req);
@@ -88,7 +94,7 @@ export const createComment = async (req: Request, res: Response, next: NextFunct
 
         const comment = new Comment({
             postId,
-            owner: req.user?.id,
+            author: req.user?.id,
             body,
         });
         post.comments++;
@@ -102,11 +108,7 @@ export const createComment = async (req: Request, res: Response, next: NextFunct
         await session.commitTransaction();
         session.endSession();
 
-        const response: { message: string, accessToken?: string } = { message: 'comment was created successfuly' };
-        if (req.newAccessToken) {
-            response.accessToken = req.newAccessToken;
-        }
-        res.status(201).json(response);
+        res.status(201).json({ message: "Created" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();
@@ -119,7 +121,13 @@ export const createComment = async (req: Request, res: Response, next: NextFunct
 export const updateComment = async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-        res.status(400).json({ errors: result.array() });
+        const errors = result.array();
+        const errorMessages = {
+            postId: getErrorMessage(errors, "postId"),
+            commentId: getErrorMessage(errors, "commentId"),
+            body: getErrorMessage(errors, "body")
+        }
+        res.status(400).json({ errors: errorMessages });
         return;
     }
     const { postId, commentId, body } = matchedData<{ postId: ObjectId, commentId: ObjectId, body: string }>(req);
@@ -136,11 +144,7 @@ export const updateComment = async (req: Request, res: Response, next: NextFunct
         comment.body = body;
         await comment.save();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Updated" });  
     } catch (error) {
         next(error);
     }
@@ -171,7 +175,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
         let likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: commentId });
         // if the user is doing the same action (liking a post he already liked or the opposite)
         if (likeDoc) {
-            res.status(200).json({ message: "Already liked" });
+            res.status(200).json({ message: "Success" });
             return;
         }
 
@@ -193,11 +197,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
         await session.commitTransaction();
         session.endSession();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Success" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();
@@ -233,7 +233,7 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        if ([Roles.ADMIN, Roles.MODERATOR].includes(req.user?.role as Roles) || (comment.author.toString() !== req.user?.id.toString())) {
+        if (![Roles.ADMIN, Roles.MODERATOR].includes(req.user?.role as Roles) && (comment.author.toString() !== req.user?.id.toString())) {
             res.status(403).json({ message: 'Forbidden: You do not have the necessary permissions to delete this comment' });
             return;
         }
@@ -251,11 +251,55 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
         await session.commitTransaction();
         session.endSession();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
+        res.status(200).json({ message: "Deleted" });
+    } catch (error) {
+        if (session !== null) {
+            await session.abortTransaction();
+            session.endSession();
+        }
+        next(error);
+    }
+}
+
+export const unlikeComment = async (req: Request, res: Response, next: NextFunction) => {
+    const postId = req.params.postId;
+    const commentId = req.params.commentId;
+
+    if (!mongoose.isValidObjectId(commentId)) {
+        res.status(400).json({ message: "Comment id is not valid!" });
+        return;
+    }
+
+    let session = null;
+
+    try {
+        const comment = await Comment.findOne({ _id: commentId, postId });
+        if (!comment) {
+            res.status(404).json({ message: "Comment not found" });
             return;
         }
-        res.sendStatus(204);
+
+        /*
+            likeDoc: check if there is already a Like document for this comment by the authenticated user,
+        */
+        const likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: commentId });
+        // if the user is doing the same reaction (liking a post he already liked or the opposite)
+        if (!likeDoc) {
+            res.status(200).json({ message: "Success" });
+            return;
+        }
+
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        likeDoc.deleteOne().session(session);
+        comment.likes--;
+        await comment.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({ message: "Success" });
     } catch (error) {
         if (session !== null) {
             await session.abortTransaction();

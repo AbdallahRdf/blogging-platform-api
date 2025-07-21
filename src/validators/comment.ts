@@ -59,10 +59,6 @@ export const replyCreationSchema = [
     param('commentId')
         .isMongoId()
         .withMessage('Invalid comment id'),
-    param('replyId')
-        .optional()
-        .isMongoId()
-        .withMessage('Invalid reply id'),
     body("replyToUsername")
         .trim()
         .notEmpty()

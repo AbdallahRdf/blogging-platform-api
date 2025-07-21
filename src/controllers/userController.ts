@@ -64,10 +64,6 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
             users.pop(); // Remove the last user to prevent it from being returned again
         }
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken, cursor: nextCursor, users });
-            return;
-        }
         res.status(200).json({ cursor: nextCursor, users });
     } catch (error) {
         next(error);
@@ -82,10 +78,6 @@ export const getUser = async (req: Request, res: Response, next: NextFunction) =
             return;
         }
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken, user });
-            return
-        }
         res.status(200).json({ user });
     } catch (error) {
         next(error);
@@ -115,7 +107,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     }
     const data = matchedData<UpdatableUserFields>(req);
     if (Object.keys(data).length === 0) {
-        res.sendStatus(204);
+        res.status(200).json({ message: "Updated" });
         return;
     }
     try {
@@ -136,11 +128,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 
         await user.save();
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Updated" });
     } catch (error) {
         next(error);
     }
@@ -171,7 +159,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
 
         await user.deleteOne();
 
-        res.sendStatus(204);
+        res.status(200).json({ message: "Deleted" });
     } catch (error) {
         next(error);
     }
@@ -201,11 +189,7 @@ export const changeUserRole = async (req: Request, res: Response, next: NextFunc
             await user.save();
         }
 
-        if (req.newAccessToken) {
-            res.status(200).json({ accessToken: req.newAccessToken });
-            return;
-        }
-        res.sendStatus(204);
+        res.status(200).json({ message: "Success" });
     } catch (error) {
         next(error);
     }
