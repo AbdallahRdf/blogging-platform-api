@@ -44,7 +44,7 @@ This is the backend API for a personal blog built using **Node.js**, **Express.j
 
 ## 📚 API Documentation
 
-For a complete list of API endpoints and schemas, refer to the [API Documentation](src/doc/swagger.yamlb) (OpenAPI/Swagger).
+For a complete list of API endpoints and schemas, refer to the [API Documentation](src/doc/swagger.yaml) (OpenAPI/Swagger).
 
 ---
 
