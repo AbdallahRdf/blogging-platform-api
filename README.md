@@ -1,86 +1,90 @@
 # Blogging Platform API
 
-This is the backend API for a personal blog built using Node.js and Express.js, with MongoDB Atlas as the database. The API includes JWT-based authentication and role-based authorization, supporting three roles: Admin, Moderator, and User.
+This is the backend API for a personal blog built using **Node.js**, **Express.js**, and **TypeScript**, with **MongoDB Atlas** as the database. The API includes JWT-based authentication and role-based authorization, supporting three roles: **Admin**, **Moderator**, and **User**.
 
 **Hosted on Render:** [Blogging Platform API](https://blogging-platform-api-uhuy.onrender.com)
 
-## Technologies Used
+---
 
-* **Backend:**
-  * Node.js: JavaScript runtime environment
-  * Express.js: Web application framework
-  * MongoDB Atlas: NoSQL database
-* **Authentication and Authorization:**
-  * JSON Web Tokens (JWT): For secure authentication
-* **Email:**
-  * Nodemailer (for sending account activation and password reset emails)
-* **Deployment:**
-  * Render (cloud platform for hosting)
+## 🛠️ Technologies Used
 
+- **Backend:**
+  - Node.js + Express.js
+  - TypeScript
+  - MongoDB Atlas (NoSQL, cloud-hosted)
+- **Authentication & Authorization:**
+  - JSON Web Tokens (JWT)
+- **Email Services:**
+  - Nodemailer (password reset emails)
+- **Deployment:**
+  - Render
 
-## Features
+---
 
-### Actions
+## ✨ Features
 
-**Unauthenticated Users:**
+### 🔓 Unauthenticated Users
 
-* Can read posts and comments.
-* Cannot like/dislike or comment unless logged in.
+- Can view posts and comments
+- Cannot like, dislike, or comment
 
-**Authenticated Users:**
+### 🔐 Authenticated Users
 
-* Can like/dislike posts, comments, and replies.
-* Can comment on posts and reply to comments.
-* Can update or delete their own account.
-* Can view their own profile or other users' profiles.
+- Can like/dislike posts, comments, and replies
+- Can comment on posts and reply to comments
+- Can manage their own account (update/delete)
+- Can view their profile and other users' profiles
 
-### Authentication
+### 🔑 Authentication
 
-* JWT-based authentication: Sign up, login, and protected routes.
-* Account Activation via Email: Users must activate their account after signing up via an activation email before logging in.
-* Forgot Password: Users can reset their password via a reset password email.
+- JWT-based secure login and route protection
+- Password reset via email
 
-## Public API Endpoints
+---
 
-For detailed information about the public API endpoints, please refer to the [API Documentation](publicEndpointsDoc.md).
+## 📚 API Documentation
 
-## Project Setup
+For a complete list of API endpoints and schemas, refer to the [API Documentation](src/doc/swagger.yamlb) (OpenAPI/Swagger).
 
-### Prerequisites
+---
 
-* Node.js (v14+)
-* MongoDB Atlas (or local MongoDB instance)
+## 🚀 Running the Project Locally
 
-### Installation Steps
+> ⚠️ **MongoDB must be cloud-hosted (e.g., Atlas)**. Local MongoDB will not work because this project uses **sessions and transactions**, which are not supported by standalone instances.
+
+### ✅ Prerequisites
+
+- Node.js (v14+)
+- MongoDB Atlas account
+
+### 📦 Installation Steps
 
 1. Clone the repository:
 
    ```bash
    git clone https://github.com/AbdallahRdf/blogging-platform-api.git
+   cd blogging-platform-api
    ```
 
 2. Install dependencies:
 
    ```bash
-   cd blogging-platform-api
    npm install
    ```
 
-3. Create a `.env` file with the necessary environment variables:
+3. Create a `.env` file with the following variables:
 
-   ```
-   PORT=Server_port_number.
-   JWT_SECRET_KEY=Secret_key_for_JWT_authentication.
-   MONGODB_CONNECTION_STRING=your-mongodb-connection-string
-   FRONTEND_URL=URL_of_your_frontend_application_(optional)
-   EMAIL_USER=Email_address_for_sending_emails
-   EMAIL_APP_PASSWORD=Application_password_for_the_email_account.
-   NODE_ENV=development_or_production
+   ```env
+   PORT=5000
+   JWT_SECRET_KEY=your_jwt_secret
+   MONGODB_CONNECTION_STRING=your_mongodb_atlas_uri
+   FRONTEND_URL=http://localhost:3000
+   EMAIL_USER=your_email@example.com
+   EMAIL_APP_PASSWORD=your_email_app_password
+   NODE_ENV=development
    ```
 
 4. Create an initial admin user:
-
-    run the command below to run createAdmin.js script to create an admin user.
 
    ```bash
    npm run create-admin
@@ -89,9 +93,18 @@ For detailed information about the public API endpoints, please refer to the [AP
 5. Start the development server:
 
    ```bash
-   npm run start:dev
+   npm run dev
    ```
 
-## Contributing
+---
 
-If you want to contribute to this project, feel free to fork the repo and submit a pull request.
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to fork the repo and submit a pull request.
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
