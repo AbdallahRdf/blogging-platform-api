@@ -38,7 +38,7 @@ app.use(express.json());
 
 app.use(morgan('dev'));
 
-const swaggerDocument = yaml.load(import.meta.dirname + '/doc/swagger.yaml');
+const swaggerDocument = yaml.load(import.meta.dirname + '/../doc/swagger.yaml');
 if (process.env.NODE_ENV === 'development') {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
 }

@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsup",
     "start": "node ./dist/server.js",
     "dev": "tsx --env-file=.env --watch ./src/server.ts",
     "create-admin": "tsx --env-file=.env createAdmin.ts"
@@ -38,6 +38,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
+    "tsup": "^8.5.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
