@@ -1,8 +1,12 @@
 openapi: 3.0.4
 info:
   title: Blog API
-  version: 2.0.0
-  description: "API documentation for personal blogging platform"
+  version: 3.0.0
+  description:  |-
+    API documentation for personal blogging platform
+    
+    All state-changing requests (POST, PATCH, DELETE) that involve refresh token cookies require CSRF protection. 
+    These routes must include the `x-csrf-token` header. You can fetch the CSRF token by calling GET /api/csrf-token.
 servers:
   - url: http://localhost:5000/api
     description: Local development server
@@ -273,6 +277,26 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
+  /csrf-token:
+    get:
+      tags:
+        - Auth
+      summary: Get CSRF token
+      description: Returns a CSRF token that must be included in a custom `x-csrf-token` header for state-changing requests.
+      responses:
+        200:
+          description: CSRF token successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrfToken:
+                    type: string
+                    example: "f1b2c3d4e5a6"
+        '500':
+          $ref: "#/components/responses/ServerError"
+
   /users:
     get:
       security:
@@ -477,6 +501,7 @@ paths:
           schema:
             type: string
           description: Unique username of the user to retrieve
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         content:
           application/json:
@@ -562,6 +587,7 @@ paths:
           schema:
             type: string
           description: Unique username of the user to delete
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Deleted"
@@ -591,6 +617,7 @@ paths:
           schema:
             type: string
           description: Unique username of the user to assign a role to
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         required: true
         content:
@@ -776,6 +803,8 @@ paths:
         Allows an authenticated user with admin or moderator privileges to create a new blog post. 
         Requires title, description, headers, cover image URL, content, and a list of tags.
       tags: [Posts]
+      parameters:
+        - $ref: "#/components/parameters/CSRFHeader"
       security:
         - JWTAuth: []
       requestBody:
@@ -1040,6 +1069,7 @@ paths:
         - JWTAuth: []
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
@@ -1073,6 +1103,7 @@ paths:
         - JWTAuth: []
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
@@ -1107,6 +1138,7 @@ paths:
         - JWTAuth: []
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         required: true
         content:
@@ -1187,6 +1219,7 @@ paths:
         - JWTAuth: []
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Deleted"
@@ -1319,7 +1352,7 @@ paths:
 
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
-
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         required: true
         content:
@@ -1380,6 +1413,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         required: true
         content:
@@ -1445,13 +1479,12 @@ paths:
 
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
-
         - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
 
       responses:
         200:
           $ref: "#/components/responses/Deleted"
-
         400:
           description: Invalid postId or commentId
           content:
@@ -1462,16 +1495,12 @@ paths:
                   message:
                     type: string
                     example: "Invalid comment id"
-
         401:
           $ref: "#/components/responses/Unauthorized"
-
         403:
           $ref: "#/components/responses/Forbidden"
-
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
-
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1488,6 +1517,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
@@ -1524,11 +1554,10 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
-
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
-
         400:
           description: Invalid post or comment ID
           content:
@@ -1539,13 +1568,10 @@ paths:
                   message:
                     type: string
                     example: "Comment id is not valid!"
-
         401:
           $ref: "#/components/responses/Unauthorized"
-
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
-
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1681,6 +1707,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
 
       requestBody:
         required: true
@@ -1753,7 +1780,7 @@ paths:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
-
+        - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
         required: true
         content:
@@ -1821,7 +1848,8 @@ paths:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
-
+        - $ref: "#/components/parameters/CSRFHeader"
+        
       responses:
         200:
           $ref: "#/components/responses/Deleted"
@@ -1852,7 +1880,7 @@ paths:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
-
+        - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
@@ -1881,6 +1909,7 @@ paths:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
+        - $ref: "#/components/parameters/CSRFHeader"
 
       responses:
         200:
@@ -1935,6 +1964,14 @@ components:
         Use the JWT token obtained from login or registration to access protected routes.
 
   parameters:
+    CSRFHeader:
+      in: header
+      name: x-csrf-token
+      required: true
+      schema:
+        type: string
+        example: 032a2df284c8ec8237...
+      description: CSRF token obtained from GET `/csrf-token` endpoint. Required for requests that rely on cookies (e.g., refresh token).
     PostIdParam:
       in: path
       name: postId

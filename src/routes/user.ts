@@ -4,6 +4,7 @@ import authenticateToken from "../middleware/authenticateToken";
 import authorizeRoles from "../middleware/authorizeRoles";
 import { Roles } from "../enums/user.enums";
 import { changeUserRoleSchema, userUpdateSchema } from "../validators/user";
+import { verifyCsrfToken } from "../middleware/verifyCsrfToken";
 
 const router = Router();
 
@@ -13,10 +14,10 @@ router.get('/', authorizeRoles(Roles.ADMIN, Roles.MODERATOR), getUsers);
 
 router.get('/:username', getUser);
 
-router.patch('/:username', userUpdateSchema, updateUser);
+router.patch('/:username', verifyCsrfToken, userUpdateSchema, updateUser);
 
-router.delete('/:username', deleteUser);
+router.delete('/:username', verifyCsrfToken, deleteUser);
 
-router.post('/:username/roles', authorizeRoles(Roles.ADMIN), changeUserRoleSchema, changeUserRole);
+router.post('/:username/roles', verifyCsrfToken, authorizeRoles(Roles.ADMIN), changeUserRoleSchema, changeUserRole);
 
 export default router;

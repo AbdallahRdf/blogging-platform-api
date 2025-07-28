@@ -11,6 +11,7 @@ import checkPostExists from "../middleware/checkPostExists";
 import checkCommentExists from "../middleware/checkCommentExists";
 import getLikeStatus from "../middleware/getLikeStatus";
 import checkReplyExists from "../middleware/checkReplyExists";
+import { verifyCsrfToken } from "../middleware/verifyCsrfToken";
 
 const router = Router();
 
@@ -22,15 +23,15 @@ router.get('/:postSlug', getPost);
 
 router.get('/:postId/likes/status', authenticateToken, getLikeStatus);
 
-router.post('/', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postCreationSchema, createPost);
+router.post('/', authenticateToken, verifyCsrfToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postCreationSchema, createPost);
 
-router.post('/:postId/likes', authenticateToken, likePost);
+router.post('/:postId/likes', authenticateToken, verifyCsrfToken, likePost);
 
-router.patch('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postUpdateSchema, updatePost);
+router.patch('/:postId', authenticateToken, verifyCsrfToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), postUpdateSchema, updatePost);
 
-router.delete('/:postId', authenticateToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), deletePost);
+router.delete('/:postId', authenticateToken, verifyCsrfToken, authorizeRoles(Roles.ADMIN, Roles.MODERATOR), deletePost);
 
-router.delete('/:postId/likes/', authenticateToken, unlikePost);
+router.delete('/:postId/likes', authenticateToken, verifyCsrfToken, unlikePost);
 
 // comments
 
@@ -38,15 +39,15 @@ router.get('/:postId/comments', checkPostExists, getCommentsSchema, getComments)
 
 router.get('/:postId/comments/:commentId/likes/status', authenticateToken, checkPostExists, checkCommentExists, getLikeStatus);
 
-router.post('/:postId/comments', authenticateToken, commentCreationSchema, createComment);
+router.post('/:postId/comments', authenticateToken, verifyCsrfToken, commentCreationSchema, createComment);
 
-router.post('/:postId/comments/:commentId/likes', authenticateToken, checkPostExists, likeComment);
+router.post('/:postId/comments/:commentId/likes', authenticateToken, verifyCsrfToken, checkPostExists, likeComment);
 
-router.patch('/:postId/comments/:commentId', authenticateToken, commentUpdateSchema, checkPostExists, updateComment);
+router.patch('/:postId/comments/:commentId', authenticateToken, verifyCsrfToken, commentUpdateSchema, checkPostExists, updateComment);
 
-router.delete('/:postId/comments/:commentId', authenticateToken, deleteComment);
+router.delete('/:postId/comments/:commentId', authenticateToken, verifyCsrfToken, deleteComment);
 
-router.delete('/:postId/comments/:commentId/likes', authenticateToken, checkPostExists, unlikeComment);
+router.delete('/:postId/comments/:commentId/likes', authenticateToken, verifyCsrfToken, checkPostExists, unlikeComment);
 
 // replies
 
@@ -54,14 +55,14 @@ router.get('/:postId/comments/:commentId/replies', checkPostExists, checkComment
 
 router.get('/:postId/comments/:commentId/replies/:replyId/likes/status', authenticateToken, checkPostExists, checkCommentExists, checkReplyExists, getLikeStatus);
 
-router.post('/:postId/comments/:commentId/replies', authenticateToken, replyCreationSchema, createReply);
+router.post('/:postId/comments/:commentId/replies', authenticateToken, verifyCsrfToken, replyCreationSchema, createReply);
 
-router.post('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, checkPostExists, checkCommentExists, likeReply);
+router.post('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, verifyCsrfToken, checkPostExists, checkCommentExists, likeReply);
 
-router.patch('/:postId/comments/:commentId/replies/:replyId', authenticateToken, replyUpdateSchema, checkPostExists, checkCommentExists, updateReply);
+router.patch('/:postId/comments/:commentId/replies/:replyId', authenticateToken, verifyCsrfToken, replyUpdateSchema, checkPostExists, checkCommentExists, updateReply);
 
-router.delete('/:postId/comments/:commentId/replies/:replyId', authenticateToken, deleteCommentReply);
+router.delete('/:postId/comments/:commentId/replies/:replyId', authenticateToken, verifyCsrfToken, deleteCommentReply);
 
-router.delete('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, checkPostExists, checkCommentExists, unlikeReply);
+router.delete('/:postId/comments/:commentId/replies/:replyId/likes', authenticateToken, verifyCsrfToken, checkPostExists, checkCommentExists, unlikeReply);
 
 export default router;
