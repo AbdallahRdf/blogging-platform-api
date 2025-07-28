@@ -86,6 +86,9 @@ The API is documented using OpenAPI/Swagger.
    EMAIL_USER=your_email@example.com
    EMAIL_APP_PASSWORD=your_email_app_password
    NODE_ENV=development
+   GLOBAL_RATE_LIMITER_MAX=number_of_requests_allowed_per_minute_globally
+   AUTH_RATE_LIMITER_MAX=number_of_auth_requests_allowed_per_minute
+   SEND_EMAIL_RATE_LIMITER_MAX=number_of_emails_allowed_to_be_sent_per_minute
    ```
 
 4. Create an initial admin user:
@@ -111,4 +114,3 @@ Contributions are welcome! Feel free to fork the repo and submit a pull request.
 ## 📝 License
 
 This project is licensed under the MIT License.
-
