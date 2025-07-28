@@ -84,6 +84,8 @@ paths:
                         type: string
                         description: Error message for password validation
                         example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -129,6 +131,8 @@ paths:
                     type: string
                     description: Error message for login failure
                     example: "Invalid credentials"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -142,6 +146,8 @@ paths:
       responses:
         204:
           description: Successfully logged out
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -181,6 +187,8 @@ paths:
                     type: string
                     description: Error message for invalid email
                     example: "Invalid email address"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -210,6 +218,8 @@ paths:
                     type: string
                     description: Error message for invalid token
                     example: "Invalid or expired token"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -258,6 +268,8 @@ paths:
                     type: string
                     description: Error message for new password validation
                     example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -358,6 +370,8 @@ paths:
                     description: Error message for invalid query parameter
         403:
           $ref: "#/components/responses/Forbidden"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -440,6 +454,8 @@ paths:
                       role: "user"
         404:
           $ref: "#/components/responses/UserNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -526,6 +542,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/UserNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -551,6 +569,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/UserNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -611,6 +631,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/UserNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"    
 
@@ -742,6 +764,8 @@ paths:
                     description: Error message for invalid tags parameter
                     example: "Tags must be a comma-separated list of strings"
                     nullable: true
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -853,6 +877,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         403:
           $ref: "#/components/responses/Forbidden"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -974,6 +1000,8 @@ paths:
                     example: "Invalid post slug"
         404:
           $ref: "#/components/responses/PostNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -995,6 +1023,8 @@ paths:
           $ref: "#/components/responses/LikeStatusResponse"
         401:
           $ref: "#/components/responses/Unauthorized"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1027,6 +1057,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1058,6 +1090,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1137,6 +1171,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/PostNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1170,6 +1206,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/PostNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1266,6 +1304,8 @@ paths:
         404:
           $ref: "#/components/responses/PostNotFound"
 
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1324,6 +1364,8 @@ paths:
         404:
           $ref: "#/components/responses/PostNotFound"
 
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1385,6 +1427,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: '#/components/responses/ServerError'
 
@@ -1428,6 +1472,8 @@ paths:
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
 
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1459,6 +1505,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: '#/components/responses/ServerError'
 
@@ -1498,6 +1546,8 @@ paths:
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
 
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1533,6 +1583,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1612,6 +1664,8 @@ paths:
                     example: "cursor is not valid"
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1680,6 +1734,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1746,6 +1802,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1775,6 +1833,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
         
@@ -1802,6 +1862,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1829,6 +1891,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -1856,6 +1920,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+        429:
+          $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
@@ -2105,6 +2171,16 @@ components:
               message:
                 type: string
                 example: Forbidden
+    TooManyRequests:
+      description: Too many requests - rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Too many requests. Please wait and try again.
     ServerError:
       description: Internal server error
       content:

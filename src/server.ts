@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import { errorHandler } from "./utils/errorHandler.js";
 import yaml from 'yamljs';
 import swaggerUi from "swagger-ui-express";
+import { globalRateLimiter } from "./config/rateLimiter.js";
 
 const connectWithRetry = () => {
     mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string)
@@ -42,6 +43,8 @@ const swaggerDocument = yaml.load(import.meta.dirname + '/../doc/swagger.yaml');
 if (process.env.NODE_ENV === 'development') {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
 }
+
+app.use(globalRateLimiter)
 
 app.use('/api', routes);
 

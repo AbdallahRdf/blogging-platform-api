@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { emailSchema, loginSchema, passwordSchema, signupSchema } from '../validators/auth';
 import { handlePasswordReset, login, logout, signup, updatePassword, validatePasswordResetToken } from '../controllers/authController.js';
+import { authLimiter, sendEmailRateLimiter } from '../config/rateLimiter';
 
 const router = Router();
 
-router.post('/register', signupSchema, signup);
+router.post('/register', authLimiter, signupSchema, signup);
 
-router.post('/login', loginSchema, login);
+router.post('/login', authLimiter, loginSchema, login);
 
 router.post('/logout', logout);
 
-router.post('/forgot-password', emailSchema, handlePasswordReset);
+router.post('/forgot-password', sendEmailRateLimiter, emailSchema, handlePasswordReset);
 
 router.get('/reset-password/verify', validatePasswordResetToken);
 
