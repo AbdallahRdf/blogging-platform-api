@@ -241,3 +241,7 @@ export const updatePassword = async (req: Request, res: Response, next: NextFunc
         next(error);
     }
 }
+
+export const handleRefreshToken =  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ message: "Success" });
+}

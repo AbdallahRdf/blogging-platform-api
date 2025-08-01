@@ -2,9 +2,9 @@ openapi: 3.0.4
 info:
   title: Blog API
   version: 3.0.0
-  description:  |-
+  description: |-
     API documentation for personal blogging platform
-    
+
     All state-changing requests (POST, PATCH, DELETE) that involve refresh token cookies require CSRF protection. 
     These routes must include the `x-csrf-token` header. You can fetch the CSRF token by calling GET /api/csrf-token.
 servers:
@@ -155,6 +155,24 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
+  /auth/refresh-token:
+    post:
+      operationId: refreshToken
+      summary: Refresh the access token using the refresh token
+      tags: [Auth]
+      description: >
+        Issues a new access token using the refresh token stored in an HTTP-only cookie. 
+        This endpoint does not require an Authorization header. 
+        It is typically used when the current access token has expired. 
+        If the refresh token is invalid, expired, or missing, the request will be rejected with a 401 Unauthorized response.
+      responses:
+        200:
+          $ref: "#/components/responses/Success"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        500:
+          $ref: "#/components/responses/ServerError"
+
   /auth/forgot-password:
     post:
       operationId: requestPasswordReset
@@ -294,7 +312,7 @@ paths:
                   csrfToken:
                     type: string
                     example: "f1b2c3d4e5a6"
-        '500':
+        "500":
           $ref: "#/components/responses/ServerError"
 
   /users:
@@ -392,6 +410,8 @@ paths:
                   message:
                     type: string
                     description: Error message for invalid query parameter
+        401:
+          $ref: "#/components/responses/Unauthorized"
         403:
           $ref: "#/components/responses/Forbidden"
         429:
@@ -476,6 +496,8 @@ paths:
                       profileImage: "https://cdn.example.com/images/johndoe.png"
                       bio: "Software developer and tech enthusiast"
                       role: "user"
+        401:
+          $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/UserNotFound"
         429:
@@ -563,6 +585,8 @@ paths:
                         description: Error message for password validation
                         nullable: true
                         example: "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character."
+        401:
+          $ref: "#/components/responses/Unauthorized"
         403:
           $ref: "#/components/responses/Forbidden"
         404:
@@ -593,6 +617,8 @@ paths:
           $ref: "#/components/responses/Deleted"
         403:
           $ref: "#/components/responses/Forbidden"
+        401:
+          $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/UserNotFound"
         429:
@@ -606,7 +632,7 @@ paths:
         - JWTAuth: []
       operationId: assignUserRole
       summary: Assign a role to a user
-      tags: [Users] 
+      tags: [Users]
       description: >
         Assign a role to a user by their username. Only accessible by admin. 
         If the access token was refreshed during authentication, a new token will be included.
@@ -654,6 +680,8 @@ paths:
                         type: string
                         nullable: true
                         example: "Invalid role"
+        401:
+          $ref: "#/components/responses/Unauthorized"
         403:
           $ref: "#/components/responses/Forbidden"
         404:
@@ -661,13 +689,13 @@ paths:
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
-          $ref: "#/components/responses/ServerError"    
+          $ref: "#/components/responses/ServerError"
 
   /posts:
     get:
       operationId: getPosts
       summary: Get a list of posts
-      description:  >
+      description: >
         Retrieve a paginated list of blog posts. You can control the number of posts returned using the `limit` parameter, 
         navigate through pages using the `cursor`, sort the results using the `sort` parameter, 
         search by keywords using `search`, and filter posts by tags using a comma-separated list in the `tags` parameter.
@@ -744,7 +772,7 @@ paths:
                           type: string
                           format: date-time
                           description: Timestamp of post creation
-                      
+
               example:
                 cursor: 66e038559b9bb0ffc46836cf
                 posts:
@@ -752,7 +780,7 @@ paths:
                     title: Understanding JavaScript Closures
                     slug: understanding-javascript-closures
                     cover: https://cdn.example.com/images/js-closures.png
-                    tags: 
+                    tags:
                       - JavaScript
                       - Closures
                       - Tutorial
@@ -783,7 +811,7 @@ paths:
                     nullable: true
                   search:
                     type: string
-                    description: Error message for invalid search parameter 
+                    description: Error message for invalid search parameter
                     example: "Search term must be a string"
                     nullable: true
                   tags:
@@ -847,12 +875,12 @@ paths:
               title: "Node.js Streams Explained"
               description: "An introduction to readable and writable streams"
               headers:
-                  - id: 5a52da70-507c-497d-9bd7-968be323c912
-                    type: H2
-                    value: Introduction
-                  - id: 5a52da70-507c-497d-9bd7-968be32dc912
-                    type: H2
-                    value: What are Streams?
+                - id: 5a52da70-507c-497d-9bd7-968be323c912
+                  type: H2
+                  value: Introduction
+                - id: 5a52da70-507c-497d-9bd7-968be32dc912
+                  type: H2
+                  value: What are Streams?
               cover: "https://cdn.example.com/images/node-streams.png"
               content:
                 - type: Image
@@ -1016,7 +1044,7 @@ paths:
                 comments: 5
                 createdAt: 2024-05-10T10:00:00.000Z
                 updatedAt: 2024-05-11T14:20:00.000Z
-        400: 
+        400:
           description: Bad Request
           content:
             application/json:
@@ -1296,7 +1324,7 @@ paths:
                         likes:
                           type: integer
                           example: 5
-                        replies: 
+                        replies:
                           type: integer
                           example: 3
                         createdAt:
@@ -1324,14 +1352,14 @@ paths:
                 properties:
                   message:
                     type: string
-              examples: 
+              examples:
                 InvalidPostId:
                   summary: Invalid post Id
-                  value: 
+                  value:
                     message: "Post id is not valid!"
                 InvalidCursor:
                   summary: Invalid cursor
-                  value: 
+                  value:
                     message: "Cursor does not exist"
 
         404:
@@ -1456,15 +1484,15 @@ paths:
                         example: Comment must not be empty
 
         401:
-          $ref: '#/components/responses/Unauthorized'
+          $ref: "#/components/responses/Unauthorized"
         403:
-          $ref: '#/components/responses/Forbidden'
+          $ref: "#/components/responses/Forbidden"
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
-          $ref: '#/components/responses/ServerError'
+          $ref: "#/components/responses/ServerError"
 
     delete:
       summary: Delete a comment
@@ -1532,13 +1560,13 @@ paths:
                     type: string
                     example: Comment id is not valid!
         401:
-          $ref: '#/components/responses/Unauthorized'
+          $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
-          $ref: '#/components/responses/ServerError'
+          $ref: "#/components/responses/ServerError"
 
     delete:
       summary: Unlike a comment
@@ -1758,7 +1786,7 @@ paths:
                         nullable: true
                         example: "Body must not be empty"
         401:
-          $ref: '#/components/responses/Unauthorized'
+          $ref: "#/components/responses/Unauthorized"
         404:
           $ref: "#/components/responses/PostOrCommentNotFound"
         429:
@@ -1849,7 +1877,7 @@ paths:
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
-        
+
       responses:
         200:
           $ref: "#/components/responses/Deleted"
@@ -1865,7 +1893,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
-        
+
   /posts/{postId}/comments/{commentId}/replies/{replyId}/likes:
     post:
       summary: Like a reply
@@ -1938,7 +1966,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
-        -  $ref: "#/components/parameters/ReplyIdParam"
+        - $ref: "#/components/parameters/ReplyIdParam"
 
       responses:
         200:
