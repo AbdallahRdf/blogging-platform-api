@@ -1,12 +1,13 @@
 import mongoose, { FilterQuery, ObjectId, SortOrder } from "mongoose";
-import Post, { IPost } from "../models/post";
+import Post, { IPost, IPostContent } from "../models/post";
 import User from "../models/user";
 import Comment from "../models/comment"
 import Like from "../models/like";
 import { matchedData, validationResult } from "express-validator";
-import { Sort } from "../enums/post.enums";
+import { PostBlockType, Sort } from "../enums/post.enums";
 import { NextFunction, Request, Response } from "express";
 import { getErrorMessage } from "../utils/helpers";
+import { generateTags } from "../ai/generateTags";
 
 type GetPostsParams = {
     limit: string;
@@ -142,16 +143,26 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             description: getErrorMessage(errors, "description"),
             headers: getErrorMessage(errors, "headers"),
             cover: getErrorMessage(errors, "cover"),
-            content: getErrorMessage(errors, "content"),
-            tags: getErrorMessage(errors, "tags"),
+            content: getErrorMessage(errors, "content")
         }
         res.status(400).json({ message });
         return;
     }
 
-    const { title, description, headers, cover, content, tags } = matchedData<Omit<IPost, 'slug' | 'author' | 'likes' | 'comments'>>(req);
+    const { title, description, headers, cover, content } = matchedData<Omit<IPost, 'slug' | 'author' | 'likes' | 'comments' | 'tags'>>(req);
+
+    let postContent = `title: ${title} \ndescription: ${description}`
+
+    postContent += content.reduce((accumulator: string, postContentBlock: IPostContent) => {
+        if (postContentBlock.type !== PostBlockType.IMAGE) {
+            accumulator += `\n${postContentBlock.value}`
+        }
+        return accumulator;
+    }, "");
 
     try {
+        const tags = await generateTags(postContent) as string[];
+
         const post = new Post({
             author: req.user?.id,
             title,

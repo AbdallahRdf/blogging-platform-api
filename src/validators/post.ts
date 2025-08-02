@@ -85,11 +85,6 @@ export const postCreationSchema = [
         .isArray({ min: 1 })
         .withMessage('Content must not be an empty array')
         .custom(isContentValid),
-    body('tags')
-        .isArray({ min: 1 })
-        .withMessage('Tags must not be an empty array')
-        .custom(isTagValid)
-        .withMessage('Each tag must be a string')
 ];
 
 export const postUpdateSchema = [
