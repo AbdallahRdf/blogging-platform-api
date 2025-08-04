@@ -18,7 +18,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
         if (!foundUser) {
             res.clearCookie('refreshToken', {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: true,
                 sameSite: 'none'
             });
             res.status(401).json({ message: 'Unauthorized' });
@@ -34,7 +34,7 @@ const checkRefreshToken = async (req: Request, res: Response, next: NextFunction
                 }
                 res.clearCookie('refreshToken', {
                     httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
+                    secure: true,
                     sameSite: 'none'
                 });
                 res.status(401).json({ message: 'Unauthorized' });

@@ -259,9 +259,9 @@ export const deletePost = async (req: Request, res: Response, next: NextFunction
         session = await mongoose.startSession();
         session.startTransaction();
 
-        await post.deleteOne().session(session);
-        await Comment.deleteMany({ post: req.params.postId }).session(session);
-        await Like.deleteMany({ post: req.params.postId }).session(session);
+        await post.deleteOne({ session });
+        await Comment.deleteMany({ post: req.params.postId }, { session });
+        await Like.deleteMany({ post: req.params.postId }, { session });
 
         await session.commitTransaction();
         session.endSession();
@@ -359,7 +359,7 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
         session = await mongoose.startSession();
         session.startTransaction();
 
-        likeDoc.deleteOne().session(session);
+        await likeDoc.deleteOne({ session });
         post.likes--;
         await post.save({ session });
 

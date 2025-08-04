@@ -12,7 +12,7 @@ export const generateCsrfToken = (req: Request, res: Response) => {
     // Store the secret in a secure, http-only cookie
     res.cookie("csrf_secret", secret, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "none",
         maxAge: 15 * 60 * 1000 // 15 minutes
     });

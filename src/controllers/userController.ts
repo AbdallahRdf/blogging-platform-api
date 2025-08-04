@@ -152,7 +152,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         if (user.role === req.user?.role) {
             res.clearCookie('refreshToken', {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: true,
                 sameSite: 'none'
             });
         }
