@@ -1430,7 +1430,7 @@ paths:
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}:
+  /comments/{commentId}:
     patch:
       tags: [Comments]
       summary: Update a comment
@@ -1439,7 +1439,6 @@ paths:
       security:
         - JWTAuth: []
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
@@ -1467,11 +1466,6 @@ paths:
                   errors:
                     type: object
                     properties:
-                      postId:
-                        type: string
-                        nullable: true
-                        description: Error message about the post id parameter.
-                        example: Invalid post id
                       commentId:
                         type: string
                         nullable: true
@@ -1488,7 +1482,7 @@ paths:
         403:
           $ref: "#/components/responses/Forbidden"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1506,7 +1500,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
 
@@ -1514,7 +1507,7 @@ paths:
         200:
           $ref: "#/components/responses/Deleted"
         400:
-          description: Invalid postId or commentId
+          description: Invalid commentId
           content:
             application/json:
               schema:
@@ -1528,13 +1521,13 @@ paths:
         403:
           $ref: "#/components/responses/Forbidden"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/likes:
+  /comments/{commentId}/likes:
     post:
       tags: [Comments]
       summary: Like a comment
@@ -1543,7 +1536,6 @@ paths:
       security:
         - JWTAuth: []
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
       responses:
@@ -1562,7 +1554,7 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1580,14 +1572,13 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
       responses:
         200:
           $ref: "#/components/responses/Success"
         400:
-          description: Invalid post or comment ID
+          description: Invalid comment ID
           content:
             application/json:
               schema:
@@ -1599,13 +1590,13 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/likes/status:
+  /comments/{commentId}/likes/status:
     get:
       summary: Check if the current user liked a specific comment
       operationId: getCommentLikeStatus
@@ -1617,14 +1608,13 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
 
       responses:
         200:
           $ref: "#/components/responses/LikeStatusResponse"
         400:
-          description: Invalid post or comment ID
+          description: Invalid comment ID
           content:
             application/json:
               schema:
@@ -1632,17 +1622,17 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Post id is not valid!"
+                    example: "Comment id is not valid!"
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/replies:
+  /comments/{commentId}/replies:
     get:
       summary: Get replies to a comment
       operationId: getCommentReplies
@@ -1652,7 +1642,6 @@ paths:
 
       tags: [Replies]
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
 
         - in: query
@@ -1707,7 +1696,7 @@ paths:
                           type: string
                           format: date-time
         400:
-          description: Bad request, invalid post id, comment id or cursor parameter.
+          description: Bad request, invalid comment id or cursor parameter.
           content:
             application/json:
               schema:
@@ -1717,7 +1706,7 @@ paths:
                     type: string
                     example: "cursor is not valid"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1733,7 +1722,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
         - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
 
@@ -1769,10 +1757,6 @@ paths:
                   errors:
                     type: object
                     properties:
-                      postId:
-                        type: string
-                        nullable: true
-                        example: "Invalid postId"
                       commentId:
                         type: string
                         nullable: true
@@ -1788,13 +1772,13 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentNotFound"
+          $ref: "#/components/responses/CommentNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/replies/{replyId}:
+  /replies/{replyId}:
     patch:
       summary: Update a reply
       operationId: updateReply
@@ -1805,8 +1789,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
-        - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
       requestBody:
@@ -1835,14 +1817,6 @@ paths:
                   errors:
                     type: object
                     properties:
-                      postId:
-                        type: string
-                        nullable: true
-                        example: "Invalid postId"
-                      commentId:
-                        type: string
-                        nullable: true
-                        example: "Invalid commentId"
                       replyId:
                         type: string
                         nullable: true
@@ -1856,7 +1830,7 @@ paths:
         403:
           $ref: "#/components/responses/Forbidden"
         404:
-          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+          $ref: "#/components/responses/ReplyNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1873,8 +1847,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
-        - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
 
@@ -1888,13 +1860,13 @@ paths:
         403:
           $ref: "#/components/responses/Forbidden"
         404:
-          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+          $ref: "#/components/responses/ReplyNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/replies/{replyId}/likes:
+  /replies/{replyId}/likes:
     post:
       summary: Like a reply
       operationId: likeReply
@@ -1905,8 +1877,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
-        - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
       responses:
@@ -1917,7 +1887,7 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+          $ref: "#/components/responses/ReplyNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -1934,8 +1904,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
-        - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
         - $ref: "#/components/parameters/CSRFHeader"
 
@@ -1947,13 +1915,13 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+          $ref: "#/components/responses/ReplyNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/ServerError"
 
-  /posts/{postId}/comments/{commentId}/replies/{replyId}/likes/status:
+  /replies/{replyId}/likes/status:
     get:
       summary: Get like status for a reply
       operationId: getLikeStatus
@@ -1964,8 +1932,6 @@ paths:
         - JWTAuth: []
 
       parameters:
-        - $ref: "#/components/parameters/PostIdParam"
-        - $ref: "#/components/parameters/CommentIdParam"
         - $ref: "#/components/parameters/ReplyIdParam"
 
       responses:
@@ -1976,7 +1942,7 @@ paths:
         401:
           $ref: "#/components/responses/Unauthorized"
         404:
-          $ref: "#/components/responses/PostOrCommentOrReplyNotFound"
+          $ref: "#/components/responses/ReplyNotFound"
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -2196,8 +2162,8 @@ components:
                 type: string
                 description: Error message for post not found
                 example: "Post not found"
-    PostOrCommentNotFound:
-      description: Post or comment not found
+    CommentNotFound:
+      description: comment not found
       content:
         application/json:
           schema:
@@ -2206,8 +2172,8 @@ components:
               message:
                 type: string
                 example: "Comment not found"
-    PostOrCommentOrReplyNotFound:
-      description: Post or comment or reply not found
+    ReplyNotFound:
+      description: Reply not found
       content:
         application/json:
           schema:
@@ -2215,7 +2181,7 @@ components:
             properties:
               message:
                 type: string
-                example: "Post not found"
+                example: "Reply not found"
     Unauthorized:
       description: Unauthorized – user not authenticated or token is invalid
       content:

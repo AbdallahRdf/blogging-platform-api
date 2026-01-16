@@ -123,16 +123,15 @@ export const updateComment = async (req: Request, res: Response, next: NextFunct
     if (!result.isEmpty()) {
         const errors = result.array();
         const errorMessages = {
-            postId: getErrorMessage(errors, "postId"),
             commentId: getErrorMessage(errors, "commentId"),
             body: getErrorMessage(errors, "body")
         }
         res.status(400).json({ errors: errorMessages });
         return;
     }
-    const { postId, commentId, body } = matchedData<{ postId: ObjectId, commentId: ObjectId, body: string }>(req);
+    const { commentId, body } = matchedData<{commentId: ObjectId, body: string }>(req);
     try {
-        const comment = await Comment.findOne({ _id: commentId, postId });
+        const comment = await Comment.findOne({ _id: commentId });
         if (!comment) {
             res.status(404).json({ message: "Comment not found" });
             return;
@@ -151,7 +150,6 @@ export const updateComment = async (req: Request, res: Response, next: NextFunct
 }
 
 export const likeComment = async (req: Request, res: Response, next: NextFunction) => {
-    const postId = req.params.postId;
     const commentId = req.params.commentId;
 
     if (!mongoose.isValidObjectId(commentId)) {
@@ -162,7 +160,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
     let session = null;
 
     try {
-        const comment = await Comment.findOne({ _id: commentId, postId });
+        const comment = await Comment.findOne({ _id: commentId });
         if (!comment) {
             res.status(404).json({ message: "Comment not found" });
             return;
@@ -172,7 +170,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
             likeDoc: check if there is already a Like doc for this post by the authenticated user and with comment field null,
             so to update it, else create a new one
         */
-        let likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: commentId });
+        let likeDoc = await Like.findOne({ user: req.user?.id, comment: commentId });
         // if the user is doing the same action (liking a post he already liked or the opposite)
         if (likeDoc) {
             res.status(200).json({ message: "Success" });
@@ -182,7 +180,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
         // Create a new like document
         likeDoc = new Like({
             user: req.user?.id,
-            post: postId,
+            post: comment.postId,
             comment: commentId,
         });
 
@@ -208,11 +206,7 @@ export const likeComment = async (req: Request, res: Response, next: NextFunctio
 }
 
 export const deleteComment = async (req: Request, res: Response, next: NextFunction) => {
-    const { postId, commentId } = req.params;
-    if (!mongoose.isValidObjectId(postId)) {
-        res.status(400).json({ message: "Invalid post id" });
-        return;
-    }
+    const { commentId } = req.params;
     if (!mongoose.isValidObjectId(commentId)) {
         res.status(400).json({ message: "Invalid comment id" });
         return;
@@ -221,15 +215,15 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
     let session = null;
 
     try {
-        const post = await Post.findById(postId);
-        if (!post) {
-            res.status(404).json({ message: "Post not found" });
-            return;
-        }
-
         const comment = await Comment.findById(commentId);
         if (!comment) {
             res.status(404).json({ message: "Comment not found" });
+            return;
+        }
+
+        const post = await Post.findById(comment.postId);
+        if (!post) {
+            res.status(404).json({ message: "Post not found" });
             return;
         }
 
@@ -262,7 +256,6 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
 }
 
 export const unlikeComment = async (req: Request, res: Response, next: NextFunction) => {
-    const postId = req.params.postId;
     const commentId = req.params.commentId;
 
     if (!mongoose.isValidObjectId(commentId)) {
@@ -273,7 +266,7 @@ export const unlikeComment = async (req: Request, res: Response, next: NextFunct
     let session = null;
 
     try {
-        const comment = await Comment.findOne({ _id: commentId, postId });
+        const comment = await Comment.findOne({ _id: commentId });
         if (!comment) {
             res.status(404).json({ message: "Comment not found" });
             return;
@@ -282,7 +275,7 @@ export const unlikeComment = async (req: Request, res: Response, next: NextFunct
         /*
             likeDoc: check if there is already a Like document for this comment by the authenticated user,
         */
-        const likeDoc = await Like.findOne({ post: postId, user: req.user?.id, comment: commentId });
+        const likeDoc = await Like.findOne({ user: req.user?.id, comment: commentId });
         // if the user is doing the same reaction (liking a post he already liked or the opposite)
         if (!likeDoc) {
             res.status(200).json({ message: "Success" });

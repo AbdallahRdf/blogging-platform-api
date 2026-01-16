@@ -37,9 +37,6 @@ export const commentCreationSchema = [
 ];
 
 export const commentUpdateSchema = [
-    param('postId')
-        .isMongoId()
-        .withMessage('Invalid post id'),
     param('commentId')
         .isMongoId()
         .withMessage('Invalid comment id'),
@@ -53,9 +50,6 @@ export const commentUpdateSchema = [
 ];
 
 export const replyCreationSchema = [
-    param('postId')
-        .isMongoId()
-        .withMessage('Invalid post id'),
     param('commentId')
         .isMongoId()
         .withMessage('Invalid comment id'),
@@ -75,12 +69,6 @@ export const replyCreationSchema = [
 ];
 
 export const replyUpdateSchema = [
-    param('postId')
-        .isMongoId()
-        .withMessage('Invalid post id'),
-    param('commentId')
-        .isMongoId()
-        .withMessage('Invalid comment id'),
     param('replyId')
         .isMongoId()
         .withMessage('Invalid reply id'),

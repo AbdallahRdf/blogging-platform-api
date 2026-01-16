@@ -2,15 +2,15 @@ import crypto from "node:crypto"
 import { Request, Response } from "express";
 
 export const generateCsrfToken = (req: Request, res: Response) => {
-    const secret = crypto.randomBytes(24).toString("hex");
+    const key = crypto.randomBytes(24).toString("hex");
 
     const token = crypto
-        .createHmac("sha256", secret)
+        .createHmac("sha256", key)
         .update("csrf-token")
         .digest('hex');
 
     // Store the secret in a secure, http-only cookie
-    res.cookie("csrf_secret", secret, {
+    res.cookie("csrf_secret", key, {
         httpOnly: true,
         secure: true,
         sameSite: "none",

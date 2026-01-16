@@ -1,14 +1,21 @@
 import { NextFunction, Request, Response } from "express";
 import Like from "../models/like";
 
-const getLikeStatus = async (req: Request, res: Response, next: NextFunction) => {
-    const comment = req.params.replyId ?? req.params.commentId ?? null;
+export const getLikeStatusForPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const likeDoc = await Like.exists({ post: req.params.postId, user: req.user?.id, comment });
+        const likeDoc = await Like.exists({ post: req.params.postId, user: req.user?.id });
         res.status(200).json({ liked: !!likeDoc });
     } catch (error) {
         next(error);
     }
 }
 
-export default getLikeStatus;
+export const getLikeStatusForComments = async (req: Request, res: Response, next: NextFunction) => {
+    const comment = req.params.replyId ?? req.params.commentId ?? null;
+    try {
+        const likeDoc = await Like.exists({ user: req.user?.id, comment });
+        res.status(200).json({ liked: !!likeDoc });
+    } catch (error) {
+        next(error);
+    }
+}
